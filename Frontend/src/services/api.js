@@ -1,6 +1,23 @@
 import { supabase } from './supabase';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const PROD_API_URL = 'https://study-assistant-backend-rho.vercel.app';
+
+function getApiBaseUrl() {
+  const envUrl = import.meta.env.VITE_API_URL;
+  const isBrowser = typeof window !== 'undefined';
+  const isLocalHost = isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+  // In production (e.g. on Vercel), automatically point to live production backend
+  if (isBrowser && !isLocalHost) {
+    if (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
+      return PROD_API_URL;
+    }
+  }
+
+  return envUrl || (isLocalHost ? 'http://localhost:8000' : PROD_API_URL);
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 async function getAuthHeader() {
   if (!supabase) return {};
@@ -21,7 +38,7 @@ function formatNetworkError(err) {
 
   if (isDeployedClient && isLocalHostTarget) {
     return new Error(
-      `Cannot connect to backend: The frontend is deployed on ${window.location.hostname}, but is configured to connect to "${API_BASE_URL || 'http://localhost:8000'}". Please deploy your backend service (e.g. on Render or Railway) and set VITE_API_URL in your Vercel project environment variables.`
+      `Cannot connect to backend: The frontend is deployed on ${window.location.hostname}, but is configured to connect to "${API_BASE_URL}". Please ensure backend service is running.`
     );
   }
 
