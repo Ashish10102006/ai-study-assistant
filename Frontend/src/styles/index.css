@@ -99,6 +99,8 @@ button {
   border: none;
   background: none;
   outline: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .btn {
@@ -114,6 +116,9 @@ button {
   text-align: center;
   position: relative;
   overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .btn:hover {
@@ -200,7 +205,7 @@ input::placeholder, textarea::placeholder {
   width: 100%;
   max-width: var(--max-content-width);
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 var(--container-pad, 1.5rem);
 }
 
 .glass-card {
@@ -340,11 +345,12 @@ input::placeholder, textarea::placeholder {
 @media (max-width: 640px) {
   :root {
     --navbar-height: var(--navbar-height-mobile);
+    --container-pad: 1rem;
   }
 
   .container {
-    padding-left: max(1rem, var(--safe-area-left));
-    padding-right: max(1rem, var(--safe-area-right));
+    padding-left: max(var(--container-pad), var(--safe-area-left));
+    padding-right: max(var(--container-pad), var(--safe-area-right));
   }
 
   .glass-card {
@@ -358,9 +364,13 @@ input::placeholder, textarea::placeholder {
 }
 
 @media (max-width: 380px) {
+  :root {
+    --container-pad: 0.75rem;
+  }
+
   .container {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    padding-left: max(var(--container-pad), var(--safe-area-left));
+    padding-right: max(var(--container-pad), var(--safe-area-right));
   }
 }
 
@@ -444,5 +454,44 @@ pre, code, table {
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+/* 6. Responsive Markdown Tables */
+.markdown-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1rem 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: rgba(10, 15, 26, 0.6);
+}
+
+.markdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+  min-width: 440px;
+}
+
+.markdown-table th, .markdown-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.markdown-table th {
+  background: rgba(0, 242, 254, 0.08);
+  color: var(--brand-cyan);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.markdown-table tr:last-child td {
+  border-bottom: none;
+}
+
+.markdown-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
 }
 

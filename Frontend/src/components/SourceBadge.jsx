@@ -95,7 +95,9 @@ export default function SourceBadge({ source, onSaveSuccess }) {
             display: 'flex',
             alignItems: 'center',
             gap: '0.35rem',
-            lineHeight: '1.3'
+            lineHeight: '1.3',
+            wordBreak: 'break-word',
+            overflowWrap: 'anywhere'
           }}
         >
           <span>{source.title}</span>
@@ -104,7 +106,7 @@ export default function SourceBadge({ source, onSaveSuccess }) {
       </div>
 
       {source.description && (
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
           {source.description}
         </p>
       )}

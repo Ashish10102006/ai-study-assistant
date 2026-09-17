@@ -47,6 +47,8 @@
   --navbar-height-mobile: 64px;
   --sidebar-width: 280px;
   --max-content-width: 1320px;
+  --container-pad: 1.5rem;
+  --app-height: 100dvh;
   --touch-target-min: 48px;
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);

@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Pages
 import Home from './pages/Home';
@@ -23,20 +24,81 @@ export default function App() {
       <Navbar />
       <main style={{ flex: 1 }}>
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/study" element={<StudyAssistant />} />
-          <Route path="/assistant" element={<Navigate to="/study" replace />} />
-          <Route path="/chat/:id" element={<ConversationView />} />
-          <Route path="/conversations" element={<ConversationsList />} />
-          <Route path="/materials" element={<StudyMaterials />} />
-          <Route path="/materials/:id" element={<DocumentDetail />} />
           <Route path="/resources" element={<LearningResources />} />
-          <Route path="/saved" element={<SavedResources />} />
-          <Route path="/profile" element={<Profile />} />
+
+          {/* Protected Routes (Require Student Authentication) */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/study"
+            element={
+              <ProtectedRoute>
+                <StudyAssistant />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/assistant" element={<Navigate to="/study" replace />} />
+          <Route
+            path="/chat/:id"
+            element={
+              <ProtectedRoute>
+                <ConversationView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/conversations"
+            element={
+              <ProtectedRoute>
+                <ConversationsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/materials"
+            element={
+              <ProtectedRoute>
+                <StudyMaterials />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/materials/:id"
+            element={
+              <ProtectedRoute>
+                <DocumentDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/saved"
+            element={
+              <ProtectedRoute>
+                <SavedResources />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/settings" element={<Navigate to="/profile" replace />} />
+
+          {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

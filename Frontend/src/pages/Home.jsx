@@ -314,14 +314,14 @@ export default function Home() {
         <div
           className="glass-card"
           style={{
-            padding: '2.5rem',
+            padding: 'clamp(1.25rem, 3.5vw, 2.5rem)',
             background: 'linear-gradient(135deg, rgba(138, 43, 226, 0.15) 0%, rgba(13, 18, 29, 0.9) 100%)',
             border: '1px solid rgba(138, 43, 226, 0.3)',
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '2rem'
+            gap: '1.5rem'
           }}
         >
           <div style={{ maxWidth: '600px' }}>
@@ -335,7 +335,7 @@ export default function Home() {
               Upload lecture slides, syllabus PDFs, or exam notes. AI Study Assistant extracts authentic text chunks and provides grounded summaries, practice quizzes, and direct answers without hallucination.
             </p>
           </div>
-          <Link to="/materials" className="btn btn-primary" style={{ padding: '0.9rem 1.8rem', borderRadius: '14px' }}>
+          <Link to="/materials" className="btn btn-primary" style={{ padding: '0.9rem 1.8rem', borderRadius: '14px', flex: '0 0 auto' }}>
             <Upload size={18} />
             <span>Upload Document</span>
           </Link>
@@ -346,7 +346,7 @@ export default function Home() {
           7. WEB LEARNING RESOURCES (TAVILY)
           ========================================================== */}
       <section className="container" style={{ margin: '4rem auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <span className="badge badge-cyan" style={{ marginBottom: '0.5rem' }}>
               Live Knowledge Integration
@@ -356,13 +356,13 @@ export default function Home() {
               Real academic references retrieved via Tavily. Zero fabricated URLs or links.
             </p>
           </div>
-          <Link to="/resources" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--brand-cyan)', fontWeight: '600', fontSize: '0.9rem' }}>
+          <Link to="/resources" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--brand-cyan)', fontWeight: '600', fontSize: '0.9rem', minHeight: '44px' }}>
             <span>Search All Resources</span>
             <ArrowRight size={16} />
           </Link>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1.25rem' }}>
           {sampleResources.map((src, idx) => (
             <SourceBadge key={idx} source={src} />
           ))}
@@ -380,7 +380,7 @@ export default function Home() {
               View All History →
             </Link>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '1rem' }}>
             {recentConversations.map((c) => (
               <div
                 key={c.id}
@@ -439,7 +439,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.5rem' }}>
           <StudyCard3D
             title="Explain Simply"
             subtitle="Complex theoretical proofs and algorithms broken down using intuitive real-life analogies and plain language."
@@ -511,8 +511,8 @@ export default function Home() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-          <div className="glass-card" style={{ padding: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.5rem' }}>
+          <div className="glass-card" style={{ padding: 'clamp(1.25rem, 3vw, 2rem)' }}>
             <ShieldCheck size={32} color="#10b981" style={{ marginBottom: '1rem' }} />
             <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: '#fff' }}>
               Zero Hallucinations Policy
@@ -522,7 +522,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="glass-card" style={{ padding: '2rem' }}>
+          <div className="glass-card" style={{ padding: 'clamp(1.25rem, 3vw, 2rem)' }}>
             <Zap size={32} color="#00f2fe" style={{ marginBottom: '1rem' }} />
             <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: '#fff' }}>
               Powered by Gemini 3.6 Flash
@@ -532,7 +532,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="glass-card" style={{ padding: '2rem' }}>
+          <div className="glass-card" style={{ padding: 'clamp(1.25rem, 3vw, 2rem)' }}>
             <GraduationCap size={32} color="#8a2be2" style={{ marginBottom: '1rem' }} />
             <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: '#fff' }}>
               Student-Centered Privacy

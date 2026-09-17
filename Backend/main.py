@@ -8,6 +8,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 import logging
+import uuid
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
@@ -45,11 +46,21 @@ if settings.APP_URL and settings.APP_URL not in origins:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permits flexible local dev and staging access
+    allow_origins=origins,
+    allow_origin_regex=r"^https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_correlation_id_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-Id") or str(uuid.uuid4())
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-Id"] = request_id
+    return response
 
 
 @app.middleware("http")
@@ -86,10 +97,15 @@ def root():
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Global unhandled error at {request.url.path}: {exc}", exc_info=True)
+    req_id = getattr(request.state, "request_id", "unknown")
+    logger.error(f"[Req {req_id}] Global unhandled error at {request.url.path}: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "An internal error occurred. Please try again or contact support."}
+        content={
+            "detail": "An internal error occurred. Please try again or contact support.",
+            "request_id": req_id
+        },
+        headers={"X-Request-Id": req_id}
     )
 
 

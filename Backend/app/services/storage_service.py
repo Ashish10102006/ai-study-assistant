@@ -3,7 +3,7 @@ import sqlite3
 import json
 import uuid
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 from app.config.settings import get_settings
@@ -112,7 +112,7 @@ class StorageService:
     # ==========================================================
     def create_conversation(self, user_id: str, title: str, subject: str = "Computer Science", topic: str = "") -> Dict[str, Any]:
         conv_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         sb = get_supabase_admin()
 
         if sb:
@@ -210,7 +210,7 @@ class StorageService:
         return conv
 
     def update_conversation(self, conversation_id: str, user_id: str, title: Optional[str] = None, subject: Optional[str] = None, topic: Optional[str] = None) -> Optional[Dict[str, Any]]:
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         sb = get_supabase_admin()
         updates = {"updated_at": now}
         if title: updates["title"] = title
@@ -265,7 +265,7 @@ class StorageService:
 
     def add_message(self, conversation_id: str, user_id: str, role: str, content: str, source_metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         msg_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         source_metadata = source_metadata or {}
         sb = get_supabase_admin()
 
@@ -313,7 +313,7 @@ class StorageService:
     # ==========================================================
     def save_document(self, user_id: str, file_name: str, file_type: str, file_size: int, storage_path: str) -> Dict[str, Any]:
         doc_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         sb = get_supabase_admin()
 
         if sb:
@@ -357,7 +357,7 @@ class StorageService:
         }
 
     def update_document_status(self, document_id: str, status: str):
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         sb = get_supabase_admin()
         if sb:
             try:
@@ -372,7 +372,7 @@ class StorageService:
         conn.close()
 
     def save_document_chunks(self, document_id: str, chunks: List[Dict[str, Any]]):
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         sb = get_supabase_admin()
         if sb and chunks:
             try:
@@ -508,7 +508,7 @@ class StorageService:
     # ==========================================================
     def save_resource(self, user_id: str, title: str, url: str, source: str, description: Optional[str] = None) -> Dict[str, Any]:
         res_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         sb = get_supabase_admin()
         if sb:
             try:
@@ -583,8 +583,16 @@ class StorageService:
     # ==========================================================
     # PROFILES & INTERESTS
     # ==========================================================
-    def get_or_create_profile(self, user_id: str, email: str = "") -> Dict[str, Any]:
+    def get_or_create_profile(
+        self,
+        user_id: str,
+        email: str = "",
+        full_name: Optional[str] = None,
+        profile_image: Optional[str] = None
+    ) -> Dict[str, Any]:
         sb = get_supabase_admin()
+        clean_name = (full_name.strip() if full_name else None) or (email.split("@")[0].title() if email else "Student Scholar")
+
         if sb:
             try:
                 res = sb.table("profiles").select("*").eq("user_id", user_id).execute()
@@ -594,8 +602,28 @@ class StorageService:
                     int_res = sb.table("user_interests").select("interest").eq("user_id", user_id).execute()
                     prof["interests"] = [i["interest"] for i in int_res.data] if int_res.data else []
                     return prof
-            except Exception:
-                pass
+                else:
+                    # Create new profile in Supabase
+                    prof_id = str(uuid.uuid4())
+                    now = datetime.now(timezone.utc).isoformat()
+                    insert_res = sb.table("profiles").insert({
+                        "id": prof_id,
+                        "user_id": user_id,
+                        "full_name": clean_name,
+                        "email": email,
+                        "college": "Engineering & Science College",
+                        "course": "Computer Science",
+                        "year": "3rd Year",
+                        "profile_image": profile_image,
+                        "created_at": now,
+                        "updated_at": now
+                    }).execute()
+                    if insert_res.data:
+                        prof = insert_res.data[0]
+                        prof["interests"] = ["Data Structures", "Algorithms", "Operating Systems", "Artificial Intelligence"]
+                        return prof
+            except Exception as e:
+                logger.info(f"Supabase profile operation notice: {e}. Falling back to local storage.")
 
         # SQLite Fallback
         conn = sqlite3.connect(str(self.db_path))
@@ -612,29 +640,30 @@ class StorageService:
 
         # Create new
         prof_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         c.execute("""
-            INSERT INTO profiles (id, user_id, full_name, email, college, course, year, created_at, updated_at)
-            VALUES (?, ?, ?, ?, 'Engineering & Science College', 'Computer Science', '3rd Year', ?, ?)
-        """, (prof_id, user_id, email.split("@")[0].title() if email else "Student Scholar", email, now, now))
+            INSERT INTO profiles (id, user_id, full_name, email, college, course, year, profile_image, created_at, updated_at)
+            VALUES (?, ?, ?, ?, 'Engineering & Science College', 'Computer Science', '3rd Year', ?, ?, ?)
+        """, (prof_id, user_id, clean_name, email, profile_image, now, now))
         conn.commit()
         conn.close()
 
         return {
             "id": prof_id,
             "user_id": user_id,
-            "full_name": email.split("@")[0].title() if email else "Student Scholar",
+            "full_name": clean_name,
             "email": email,
             "college": "Engineering & Science College",
             "course": "Computer Science",
             "year": "3rd Year",
+            "profile_image": profile_image,
             "interests": ["Data Structures", "Algorithms", "Operating Systems", "Artificial Intelligence"],
             "created_at": now,
             "updated_at": now
         }
 
     def update_profile(self, user_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         sb = get_supabase_admin()
         interests = data.pop("interests", None)
         data["updated_at"] = now

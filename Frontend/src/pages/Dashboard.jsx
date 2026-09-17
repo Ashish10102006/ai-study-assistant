@@ -234,7 +234,7 @@ export default function Dashboard() {
       {/* ==========================================================
           5. SAVED RESOURCES & ACADEMIC INTERESTS
           ========================================================== */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '2rem', marginBottom: '3rem' }}>
         {/* Saved Bookmarks */}
         <div className="glass-card" style={{ padding: '1.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
@@ -326,7 +326,7 @@ export default function Dashboard() {
         <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: '#fff' }}>
           Academic Study Tools
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '1.25rem' }}>
           <StudyCard3D
             title="Explain Concept"
             subtitle="Understand tough subjects in simple, intuitive student language."

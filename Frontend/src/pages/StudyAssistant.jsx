@@ -240,16 +240,16 @@ export default function StudyAssistant() {
   };
 
   return (
-    <div className="container" style={{ padding: '2.5rem 1.5rem', minHeight: 'calc(100vh - var(--navbar-height))' }}>
+    <div className="container" style={{ padding: 'clamp(1.25rem, 3vw, 2.5rem) var(--container-pad, 1.5rem)', minHeight: 'calc(100vh - var(--navbar-height))' }}>
       {/* Top Controls Bar */}
       <div
         className="glass-card"
         style={{
-          padding: '1.25rem 1.75rem',
+          padding: 'clamp(1rem, 2.5vw, 1.5rem)',
           marginBottom: '2rem',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '1.25rem',
+          gap: '1rem',
           alignItems: 'center',
           justifyContent: 'space-between'
         }}
@@ -263,7 +263,7 @@ export default function StudyAssistant() {
           <select
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            style={{ flex: '1 1 160px', minWidth: '140px', padding: '0.5rem 0.85rem' }}
+            style={{ flex: '1 1 150px', minWidth: 0, padding: '0.55rem 0.85rem', minHeight: '44px' }}
           >
             <option value="Computer Science">Computer Science</option>
             <option value="Data Structures">Data Structures</option>
@@ -285,14 +285,14 @@ export default function StudyAssistant() {
             value={customTopic}
             onChange={(e) => setCustomTopic(e.target.value)}
             placeholder="Topic (e.g. TCP Handshake, Normalization...)"
-            style={{ flex: '2 1 200px', minWidth: '180px', padding: '0.5rem 0.85rem' }}
+            style={{ flex: '2 1 180px', minWidth: 0, padding: '0.55rem 0.85rem', minHeight: '44px' }}
           />
 
           {/* Attached Document Filter */}
           <select
             value={selectedDocumentId}
             onChange={(e) => setSelectedDocumentId(e.target.value)}
-            style={{ flex: '1 1 160px', minWidth: '140px', padding: '0.5rem 0.85rem' }}
+            style={{ flex: '1 1 150px', minWidth: 0, padding: '0.55rem 0.85rem', minHeight: '44px' }}
           >
             <option value="">No Document Attached</option>
             {uploadedDocuments.map(doc => (
@@ -307,7 +307,8 @@ export default function StudyAssistant() {
             onClick={() => setUseWebSearch(!useWebSearch)}
             className="btn"
             style={{
-              padding: '0.5rem 0.95rem',
+              padding: '0.55rem 0.95rem',
+              minHeight: '44px',
               fontSize: '0.85rem',
               background: useWebSearch ? 'rgba(0, 242, 254, 0.15)' : 'rgba(255, 255, 255, 0.05)',
               border: `1px solid ${useWebSearch ? 'var(--brand-cyan)' : 'var(--border-medium)'}`,
@@ -569,15 +570,12 @@ export default function StudyAssistant() {
             <div
               style={{
                 background: 'rgba(10, 14, 23, 0.85)',
-                padding: '2rem',
+                padding: 'clamp(1.25rem, 3vw, 2rem)',
                 borderRadius: '16px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                whiteSpace: 'pre-wrap',
-                lineHeight: '1.7',
-                fontSize: '1rem'
+                border: '1px solid rgba(255, 255, 255, 0.08)'
               }}
             >
-              {generatedNotes}
+              <MarkdownRenderer content={generatedNotes} />
             </div>
           ) : !loading && (
             <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
@@ -781,13 +779,10 @@ export default function StudyAssistant() {
                         padding: '1rem',
                         borderRadius: '10px',
                         background: 'rgba(0, 0, 0, 0.4)',
-                        border: '1px solid rgba(255, 255, 255, 0.06)',
-                        whiteSpace: 'pre-wrap',
-                        fontSize: '0.92rem',
-                        color: '#f8fafc'
+                        border: '1px solid rgba(255, 255, 255, 0.06)'
                       }}
                     >
-                      {item.model_answer}
+                      <MarkdownRenderer content={item.model_answer} />
                     </div>
                   </details>
                 </div>

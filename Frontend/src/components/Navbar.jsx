@@ -154,28 +154,43 @@ export default function Navbar() {
                   minHeight: '38px'
                 }}
               >
-                <div
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '50%',
-                    background: 'var(--grad-primary)',
-                    color: '#000',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: '700',
-                    fontSize: '0.8rem',
-                    flexShrink: 0
-                  }}
-                >
-                  {user.email ? user.email[0].toUpperCase() : 'S'}
-                </div>
+                {user.user_metadata?.avatar_url || user.user_metadata?.picture ? (
+                  <img
+                    src={user.user_metadata.avatar_url || user.user_metadata.picture}
+                    alt="Student Avatar"
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '1px solid var(--brand-cyan)',
+                      flexShrink: 0
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      background: 'var(--grad-primary)',
+                      color: '#000',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: '700',
+                      fontSize: '0.8rem',
+                      flexShrink: 0
+                    }}
+                  >
+                    {user.email ? user.email[0].toUpperCase() : 'S'}
+                  </div>
+                )}
                 <span
                   className="nav-desktop"
-                  style={{ fontSize: '0.82rem', color: '#f8fafc', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  style={{ fontSize: '0.82rem', color: '#f8fafc', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                 >
-                  {user.user_metadata?.full_name || user.email?.split('@')[0] || 'Student'}
+                  {user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Student'}
                 </span>
               </Link>
               <button
@@ -300,8 +315,16 @@ export default function Navbar() {
                       color: '#fff'
                     }}
                   >
-                    <User size={18} color="var(--brand-cyan)" />
-                    <span>My Profile ({user.email?.split('@')[0] || 'Student'})</span>
+                    {user.user_metadata?.avatar_url || user.user_metadata?.picture ? (
+                      <img
+                        src={user.user_metadata.avatar_url || user.user_metadata.picture}
+                        alt="Avatar"
+                        style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                      />
+                    ) : (
+                      <User size={18} color="var(--brand-cyan)" />
+                    )}
+                    <span>My Profile ({user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Student'})</span>
                   </Link>
                   <button
                     onClick={() => { setMobileOpen(false); handleLogout(); }}

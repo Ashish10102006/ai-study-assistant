@@ -73,7 +73,7 @@ export default function HowItWorks3D() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
           gap: '1.25rem',
           position: 'relative'
         }}

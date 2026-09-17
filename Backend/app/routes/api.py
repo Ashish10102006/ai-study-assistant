@@ -1,7 +1,8 @@
 import os
+import re
 import shutil
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Query, status
@@ -53,7 +54,7 @@ async def health_check():
         app_name="AI STUDY ASSISTANT",
         version="2.0.0",
         services=safe_status,
-        timestamp=datetime.utcnow()
+        timestamp=datetime.now(timezone.utc)
     )
 
 
@@ -376,15 +377,18 @@ async def upload_document(
     if not valid:
         raise HTTPException(status_code=400, detail=err)
 
-    # Save file to disk
-    save_path = settings.UPLOAD_DIR / f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{file.filename}"
+    # Sanitize filename against path traversal
+    raw_name = Path(file.filename).name
+    safe_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', raw_name)
+    timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+    save_path = settings.UPLOAD_DIR / f"{timestamp}_{safe_name}"
     with open(save_path, "wb") as f:
         f.write(contents)
 
     # Record in storage
     doc = storage.save_document(
         user_id=current_user["id"],
-        file_name=file.filename,
+        file_name=raw_name,
         file_type=file.content_type or "application/octet-stream",
         file_size=file_size,
         storage_path=str(save_path)
@@ -699,7 +703,15 @@ async def delete_saved_resource(
 @router.get("/profile", response_model=ProfileResponse)
 async def get_profile(current_user: Dict[str, Any] = Depends(get_current_user)):
     storage = get_storage_service()
-    prof = storage.get_or_create_profile(current_user["id"], current_user.get("email", ""))
+    meta = current_user.get("user_metadata", {}) or {}
+    full_name = meta.get("full_name") or meta.get("name")
+    profile_image = meta.get("avatar_url") or meta.get("picture")
+    prof = storage.get_or_create_profile(
+        current_user["id"],
+        current_user.get("email", ""),
+        full_name=full_name,
+        profile_image=profile_image
+    )
     return ProfileResponse(
         id=prof["id"],
         user_id=prof["user_id"],

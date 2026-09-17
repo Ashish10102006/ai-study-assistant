@@ -139,8 +139,8 @@ export default function TopicCloud3D({ selectedTopic, onSelectTopic, onCustomTop
 
       {/* Custom Topic Quick Input Bar */}
       <div style={{ maxWidth: '680px', margin: '2rem auto 0 auto' }}>
-        <form onSubmit={handleCustomSubmit} style={{ display: 'flex', gap: '0.75rem' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
+        <form onSubmit={handleCustomSubmit} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 0 }}>
             <input
               type="text"
               value={customInput}
@@ -171,7 +171,7 @@ export default function TopicCloud3D({ selectedTopic, onSelectTopic, onCustomTop
           <button
             type="submit"
             className="btn btn-primary"
-            style={{ height: '52px', padding: '0 1.5rem', borderRadius: '16px', whiteSpace: 'nowrap' }}
+            style={{ height: '52px', padding: '0 1.5rem', borderRadius: '16px', whiteSpace: 'nowrap', flex: '0 0 auto' }}
           >
             Study Topic
           </button>

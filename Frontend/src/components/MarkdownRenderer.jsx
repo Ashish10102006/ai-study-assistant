@@ -87,6 +87,48 @@ export default function MarkdownRenderer({ content, style = {} }) {
   let codeBlockLang = '';
   let listItems = [];
   let listType = null; // 'ul' | 'ol'
+  let tableRows = [];
+
+  const flushTable = () => {
+    if (tableRows.length > 0) {
+      const isDivider = (r) => r.every(cell => /^[-: ]+$/.test(cell));
+      let headerRow = null;
+      let bodyRows = [];
+
+      if (tableRows.length > 1 && isDivider(tableRows[1])) {
+        headerRow = tableRows[0];
+        bodyRows = tableRows.slice(2);
+      } else {
+        bodyRows = tableRows;
+      }
+
+      elements.push(
+        <div key={elements.length} className="markdown-table-wrapper">
+          <table className="markdown-table">
+            {headerRow && (
+              <thead>
+                <tr>
+                  {headerRow.map((cell, cIdx) => (
+                    <th key={cIdx}>{renderInline(cell)}</th>
+                  ))}
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {bodyRows.map((row, rIdx) => (
+                <tr key={rIdx}>
+                  {row.map((cell, cIdx) => (
+                    <td key={cIdx}>{renderInline(cell)}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      tableRows = [];
+    }
+  };
 
   const flushList = () => {
     if (listItems.length > 0) {
@@ -114,6 +156,11 @@ export default function MarkdownRenderer({ content, style = {} }) {
       listItems = [];
       listType = null;
     }
+  };
+
+  const flushAll = () => {
+    flushList();
+    flushTable();
   };
 
   for (let i = 0; i < lines.length; i++) {
@@ -148,7 +195,7 @@ export default function MarkdownRenderer({ content, style = {} }) {
         codeBlockContent = [];
         codeBlockLang = '';
       } else {
-        flushList();
+        flushAll();
         inCodeBlock = true;
         codeBlockLang = line.trim().slice(3).trim();
       }
@@ -160,9 +207,20 @@ export default function MarkdownRenderer({ content, style = {} }) {
       continue;
     }
 
+    // Markdown Table Rows: | col1 | col2 |
+    const trimmedLine = line.trim();
+    if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|') && trimmedLine.length > 2) {
+      flushList();
+      const cells = trimmedLine.slice(1, -1).split('|').map(c => c.trim());
+      tableRows.push(cells);
+      continue;
+    } else {
+      flushTable();
+    }
+
     // Horizontal Rule: --- or ***
     if (line.trim() === '---' || line.trim() === '***') {
-      flushList();
+      flushAll();
       elements.push(
         <hr
           key={elements.length}
@@ -178,7 +236,7 @@ export default function MarkdownRenderer({ content, style = {} }) {
 
     // Headings: #, ##, ###, ####
     if (line.startsWith('### ')) {
-      flushList();
+      flushAll();
       elements.push(
         <h3
           key={elements.length}
@@ -198,7 +256,7 @@ export default function MarkdownRenderer({ content, style = {} }) {
     }
 
     if (line.startsWith('## ')) {
-      flushList();
+      flushAll();
       elements.push(
         <h2
           key={elements.length}
@@ -218,7 +276,7 @@ export default function MarkdownRenderer({ content, style = {} }) {
     }
 
     if (line.startsWith('# ')) {
-      flushList();
+      flushAll();
       elements.push(
         <h1
           key={elements.length}
@@ -240,7 +298,7 @@ export default function MarkdownRenderer({ content, style = {} }) {
     const ulMatch = line.match(/^(\s*)[-*]\s+(.+)/);
     if (ulMatch) {
       if (listType !== 'ul') {
-        flushList();
+        flushAll();
         listType = 'ul';
       }
       listItems.push(ulMatch[2]);
@@ -251,7 +309,7 @@ export default function MarkdownRenderer({ content, style = {} }) {
     const olMatch = line.match(/^(\s*)\d+\.\s+(.+)/);
     if (olMatch) {
       if (listType !== 'ol') {
-        flushList();
+        flushAll();
         listType = 'ol';
       }
       listItems.push(olMatch[2]);
@@ -260,12 +318,12 @@ export default function MarkdownRenderer({ content, style = {} }) {
 
     // Blank line
     if (!line.trim()) {
-      flushList();
+      flushAll();
       continue;
     }
 
     // Regular Paragraph
-    flushList();
+    flushAll();
     elements.push(
       <p
         key={elements.length}
@@ -280,7 +338,7 @@ export default function MarkdownRenderer({ content, style = {} }) {
     );
   }
 
-  flushList();
+  flushAll();
 
   return <div style={{ fontSize: '0.96rem', maxWidth: '100%', wordBreak: 'break-word', overflowWrap: 'anywhere', ...style }}>{elements}</div>;
 }
