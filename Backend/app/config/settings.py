@@ -4,6 +4,8 @@ from functools import lru_cache
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
+import tempfile
+
 # Ensure .env is loaded from Backend/.env
 current_dir = Path(__file__).resolve().parent
 backend_dir = current_dir.parent.parent
@@ -28,7 +30,7 @@ class Settings(BaseSettings):
     APP_URL: str = os.getenv("APP_URL", "http://localhost:5173")
     API_PORT: int = int(os.getenv("PORT", "8000"))
     API_HOST: str = os.getenv("HOST", "0.0.0.0")
-    UPLOAD_DIR: Path = backend_dir / "uploads"
+    UPLOAD_DIR: Path = Path(tempfile.gettempdir()) / "uploads" if (os.getenv("VERCEL") or not os.access(str(backend_dir), os.W_OK)) else backend_dir / "uploads"
     MAX_FILE_SIZE_MB: int = 25
 
     # AI Model Settings - prioritized by live latency benchmark
