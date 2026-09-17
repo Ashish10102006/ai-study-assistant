@@ -25,4 +25,12 @@ This directory contains the PostgreSQL schema and migrations for **AI STUDY ASSI
 5. Copy and paste the contents of `schema.sql` into the editor.
 6. Click **Run** (or Ctrl+Enter).
 
-All tables, indexes, Row Level Security policies, and triggers will be created instantly.
+All tables, indexes, Row Level Security policies, triggers, and service role permissions will be created instantly.
+
+## Fixing "403 Forbidden" or "permission denied for table"
+If you encounter `403 Forbidden` or `permission denied for table ...` errors in backend logs:
+1. Open **SQL Editor** in the Supabase Dashboard.
+2. Open or copy [Database/fix_permissions.sql](file:///c:/Users/LENOVO/OneDrive/Desktop/sudent%20study%20assistant/Database/fix_permissions.sql).
+3. Click **Run**.
+4. This grants `service_role` and `authenticated` roles the necessary table permissions.
+

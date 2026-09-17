@@ -41,14 +41,16 @@ class GeminiService:
 
         for model_name in models_to_try:
             try:
-                config = {}
-                if system_instruction:
-                    config["system_instruction"] = system_instruction
+                from google.genai import types
+                config = types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
+                )
 
                 resp = self._client.models.generate_content(
                     model=model_name,
                     contents=prompt,
-                    config=config if config else None
+                    config=config
                 )
                 if resp and resp.text:
                     return resp.text
