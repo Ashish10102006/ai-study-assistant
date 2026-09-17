@@ -24,6 +24,7 @@ export default function DocumentDetail() {
   const [loading, setLoading] = useState(true);
   const [docQuestion, setDocQuestion] = useState('');
   const [docAnswer, setDocAnswer] = useState(null);
+  const [docCitations, setDocCitations] = useState([]);
   const [answering, setAnswering] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -48,12 +49,14 @@ export default function DocumentDetail() {
 
     setAnswering(true);
     setDocAnswer(null);
+    setDocCitations([]);
     try {
       const res = await api.post(`/api/documents/${id}/ask`, {
         question: docQuestion.trim(),
         explanation_mode: 'simple'
       });
       setDocAnswer(res.answer);
+      setDocCitations(res.citations || []);
     } catch (err) {
       setDocAnswer('Failed to retrieve answer from document. Please try again.');
     } finally {
@@ -203,9 +206,14 @@ export default function DocumentDetail() {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--brand-cyan)', letterSpacing: '0.05em' }}>
-                DOCUMENT GROUNDED ANSWER
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--brand-cyan)', letterSpacing: '0.05em' }}>
+                  ADAPTIVE RAG (HYBRID RETRIEVAL + RERANKED)
+                </span>
+                <span style={{ color: '#c084fc', background: 'rgba(192, 132, 252, 0.12)', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                  Document Grounded
+                </span>
+              </div>
               <button
                 onClick={handleCopy}
                 style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.78rem', minHeight: '36px', padding: '0 0.5rem' }}
@@ -217,6 +225,34 @@ export default function DocumentDetail() {
             <div style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
               <MarkdownRenderer content={docAnswer} />
             </div>
+            {docCitations && docCitations.length > 0 && (
+              <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(255, 255, 255, 0.1)' }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '0.4rem', letterSpacing: '0.04em' }}>
+                  GROUNDED CITATIONS (RRF + CONTEXTUAL RERANKER):
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  {docCitations.map((cit, idx) => (
+                    <span
+                      key={idx}
+                      title={cit.snippet}
+                      style={{
+                        fontSize: '0.75rem',
+                        padding: '0.25rem 0.55rem',
+                        borderRadius: '6px',
+                        background: 'rgba(192, 132, 252, 0.12)',
+                        border: '1px solid rgba(192, 132, 252, 0.3)',
+                        color: '#e9d5ff',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem'
+                      }}
+                    >
+                      📄 Page {cit.page || 1}{cit.section && cit.section !== 'General Section' ? ` • ${cit.section}` : ''}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

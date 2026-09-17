@@ -136,6 +136,9 @@ export default function StudyAssistant() {
         sources: res.sources || [],
         web_search_used: res.web_search_used,
         document_used: res.document_used,
+        rag_mode: res.rag_mode || 'adaptive',
+        citations: res.citations || [],
+        routing_decision: res.routing_decision,
         created_at: new Date().toISOString()
       };
       setMessages(prev => [...prev, aiMessage]);
@@ -462,14 +465,21 @@ export default function StudyAssistant() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.75rem', color: 'var(--brand-cyan)', fontWeight: '700', flexWrap: 'wrap' }}>
                             <Sparkles size={14} />
                             <span>AI STUDY ASSISTANT</span>
-                            {m.document_used && (
-                              <span style={{ color: '#c084fc', background: 'rgba(192, 132, 252, 0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
-                                Document
+                            {m.document_used && m.web_search_used ? (
+                              <span style={{ color: '#ec4899', background: 'rgba(236, 72, 153, 0.12)', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(236, 72, 153, 0.25)' }}>
+                                Adaptive RAG: Hybrid (Doc + Web)
                               </span>
-                            )}
-                            {m.web_search_used && (
-                              <span style={{ color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
-                                Web Sources
+                            ) : m.document_used ? (
+                              <span style={{ color: '#c084fc', background: 'rgba(192, 132, 252, 0.12)', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(192, 132, 252, 0.25)' }}>
+                                Adaptive RAG: Document Grounded
+                              </span>
+                            ) : m.web_search_used ? (
+                              <span style={{ color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+                                Web Grounded (Tavily)
+                              </span>
+                            ) : (
+                              <span style={{ color: '#34d399', background: 'rgba(52, 211, 153, 0.12)', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(52, 211, 153, 0.25)' }}>
+                                Direct Academic
                               </span>
                             )}
                           </div>
@@ -489,7 +499,39 @@ export default function StudyAssistant() {
                           {m.content}
                         </div>
                       ) : (
-                        <MarkdownRenderer content={m.content} />
+                        <>
+                          <MarkdownRenderer content={m.content} />
+
+                          {/* Pinpoint Citations from Adaptive RAG */}
+                          {m.citations && m.citations.length > 0 && (
+                            <div style={{ marginTop: '0.9rem', paddingTop: '0.65rem', borderTop: '1px dashed rgba(255, 255, 255, 0.1)' }}>
+                              <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '0.4rem', letterSpacing: '0.04em' }}>
+                                GROUNDED CITATIONS (HYBRID RETRIEVAL + RRF + RERANKED):
+                              </div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                {m.citations.map((cit, idx) => (
+                                  <span
+                                    key={idx}
+                                    title={cit.snippet}
+                                    style={{
+                                      fontSize: '0.75rem',
+                                      padding: '0.25rem 0.55rem',
+                                      borderRadius: '6px',
+                                      background: 'rgba(192, 132, 252, 0.12)',
+                                      border: '1px solid rgba(192, 132, 252, 0.3)',
+                                      color: '#e9d5ff',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '0.35rem'
+                                    }}
+                                  >
+                                    📄 {cit.file_name || 'Document'}{cit.page ? ` • Page ${cit.page}` : ''}{cit.section && cit.section !== 'General Section' ? ` (${cit.section})` : ''}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>

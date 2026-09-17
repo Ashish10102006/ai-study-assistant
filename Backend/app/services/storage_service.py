@@ -81,9 +81,17 @@ class StorageService:
                 chunk_index INTEGER,
                 content TEXT,
                 metadata TEXT,
+                embedding TEXT,
                 created_at TEXT
             )
         """)
+        cursor.execute("PRAGMA table_info(document_chunks)")
+        chunk_cols = [row[1] for row in cursor.fetchall()]
+        if "embedding" not in chunk_cols:
+            try:
+                cursor.execute("ALTER TABLE document_chunks ADD COLUMN embedding TEXT")
+            except Exception:
+                pass
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS saved_resources (
                 id TEXT PRIMARY KEY,
@@ -376,14 +384,19 @@ class StorageService:
         sb = get_supabase_admin()
         if sb and chunks:
             try:
-                records = [{
-                    "id": str(uuid.uuid4()),
-                    "document_id": document_id,
-                    "chunk_index": idx,
-                    "content": ch["content"],
-                    "metadata": ch.get("metadata", {}),
-                    "created_at": now
-                } for idx, ch in enumerate(chunks)]
+                records = []
+                for idx, ch in enumerate(chunks):
+                    rec = {
+                        "id": str(uuid.uuid4()),
+                        "document_id": document_id,
+                        "chunk_index": idx,
+                        "content": ch["content"],
+                        "metadata": ch.get("metadata", {}),
+                        "created_at": now
+                    }
+                    if "embedding" in ch and ch["embedding"]:
+                        rec["embedding"] = ch["embedding"]
+                    records.append(rec)
                 sb.table("document_chunks").insert(records).execute()
             except Exception as e:
                 logger.info(f"Supabase chunks insert notice: {e}.")
@@ -393,10 +406,12 @@ class StorageService:
         for idx, ch in enumerate(chunks):
             chunk_id = str(uuid.uuid4())
             meta = json.dumps(ch.get("metadata", {}))
+            emb = ch.get("embedding")
+            emb_str = json.dumps(emb) if emb is not None else None
             c.execute("""
-                INSERT INTO document_chunks (id, document_id, chunk_index, content, metadata, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (chunk_id, document_id, idx, ch["content"], meta, now))
+                INSERT INTO document_chunks (id, document_id, chunk_index, content, metadata, embedding, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (chunk_id, document_id, idx, ch["content"], meta, emb_str, now))
         conn.commit()
         conn.close()
 
@@ -481,6 +496,41 @@ class StorageService:
         conn.commit()
         conn.close()
         return True
+
+    def get_raw_chunks_with_embeddings(self, document_id: str) -> List[Dict[str, Any]]:
+        """Returns all chunks for a document including embeddings and structured metadata."""
+        conn = sqlite3.connect(str(self.db_path))
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute("""
+            SELECT id, document_id, chunk_index, content, metadata, embedding, created_at
+            FROM document_chunks
+            WHERE document_id = ?
+            ORDER BY chunk_index ASC
+        """, (document_id,))
+        rows = c.fetchall()
+        conn.close()
+        if rows:
+            chunks = []
+            for r in rows:
+                ch = dict(r)
+                if ch.get("metadata") and isinstance(ch["metadata"], str):
+                    try:
+                        ch["metadata"] = json.loads(ch["metadata"])
+                    except Exception:
+                        ch["metadata"] = {}
+                chunks.append(ch)
+            return chunks
+
+        sb = get_supabase_admin()
+        if sb:
+            try:
+                res = sb.table("document_chunks").select("*").eq("document_id", document_id).order("chunk_index", desc=False).execute()
+                if res.data:
+                    return res.data
+            except Exception as e:
+                logger.info(f"Supabase get_raw_chunks notice: {e}")
+        return []
 
     def get_document_chunks_for_context(self, document_id: str, query: str = "", limit: int = 6) -> List[str]:
         """Retrieves most relevant document chunks based on keywords or chunk index."""

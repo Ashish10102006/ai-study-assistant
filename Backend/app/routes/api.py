@@ -28,7 +28,8 @@ from app.models.schemas import (
     ProfileResponse,
     ProfileUpdateRequest,
     HealthResponse,
-    SourceItem
+    SourceItem,
+    CitationItem
 )
 from app.config.settings import get_settings
 from app.middleware.auth import get_current_user, require_auth
@@ -37,6 +38,13 @@ from app.services.supabase_client import get_supabase_admin
 from app.ai.gemini_service import get_gemini_service
 from app.search.tavily_service import get_tavily_service
 from app.documents.processor import get_document_processor
+from app.rag import (
+    get_adaptive_router,
+    get_hybrid_retriever,
+    get_contextual_reranker,
+    get_embedding_service,
+    ContextualReranker
+)
 
 logger = logging.getLogger("ai_study_assistant.api")
 router = APIRouter(prefix="/api", tags=["AI Study Assistant"])
@@ -69,6 +77,9 @@ async def ask_question(
     storage = get_storage_service()
     gemini = get_gemini_service()
     tavily = get_tavily_service()
+    router = get_adaptive_router()
+    retriever = get_hybrid_retriever()
+    reranker = get_contextual_reranker()
     user_id = current_user["id"]
 
     active_topic = req.custom_topic.strip() if req.custom_topic else (req.topic or "Academic Concept")
@@ -95,12 +106,58 @@ async def ask_question(
         source_metadata={"subject": active_subject, "topic": active_topic, "mode": req.explanation_mode}
     )
 
-    # 2. Intelligent Web Search via Tavily if appropriate
+    # 2. Adaptive Query Router
+    user_docs = storage.list_documents(user_id)
+    routing = router.route(
+        query=req.question,
+        document_id=req.document_id,
+        use_web_search=req.use_web_search,
+        has_user_documents=bool(user_docs)
+    )
+
+    # 3. Document Hybrid Retrieval + RRF + Reranking if routed to document
+    document_context = None
+    document_used = False
+    citations: List[CitationItem] = []
+
+    target_doc_id = req.document_id
+    if not target_doc_id and routing.use_document and user_docs:
+        target_doc_id = user_docs[0]["id"]
+
+    if target_doc_id and routing.use_document:
+        doc = storage.get_document(target_doc_id, user_id)
+        if doc:
+            candidates = retriever.retrieve(
+                query=req.question,
+                document_id=target_doc_id,
+                user_id=user_id,
+                top_k=8
+            )
+            top_chunks, raw_citations = reranker.rerank(
+                query=req.question,
+                candidates=candidates,
+                document_meta=doc
+            )
+            if top_chunks:
+                document_context = ContextualReranker.build_context_block(
+                    top_chunks,
+                    filename=doc.get("file_name", "Document")
+                )
+                document_used = True
+                citations = [CitationItem(**c) for c in raw_citations]
+            else:
+                # Fallback to basic chunks if hybrid retriever produced zero matches
+                chunks = storage.get_document_chunks_for_context(target_doc_id, query=req.question, limit=5)
+                if chunks:
+                    document_context = "\n---\n".join(chunks)
+                    document_used = True
+
+    # 4. Web Search via Tavily if routed to web
     sources: List[SourceItem] = []
     web_search_used = False
     warning_msg = None
 
-    if tavily.should_search(req.question, req.use_web_search):
+    if routing.use_web:
         search_query = f"{active_subject} {active_topic} {req.question}"
         try:
             sources = tavily.search(query=search_query, max_results=4)
@@ -113,16 +170,7 @@ async def ask_question(
             if req.use_web_search is True:
                 warning_msg = "Web learning resources are temporarily unavailable."
 
-    # 3. Document Context if provided
-    document_context = None
-    document_used = False
-    if req.document_id:
-        chunks = storage.get_document_chunks_for_context(req.document_id, query=req.question, limit=5)
-        if chunks:
-            document_context = "\n---\n".join(chunks)
-            document_used = True
-
-    # 4. Generate AI Explanation via Gemini
+    # 5. Generate AI Explanation via Gemini
     try:
         explanation = gemini.generate_explanation(
             question=req.question,
@@ -137,7 +185,7 @@ async def ask_question(
         explanation = "AI service is temporarily unavailable. Please try again."
         warning_msg = "AI service is temporarily unavailable."
 
-    # 5. Save assistant response
+    # 6. Save assistant response with metadata
     assistant_msg = storage.add_message(
         conversation_id=conv_id,
         user_id=user_id,
@@ -147,6 +195,9 @@ async def ask_question(
             "sources": [s.model_dump() for s in sources],
             "web_search_used": web_search_used,
             "document_used": document_used,
+            "rag_mode": "adaptive",
+            "routing": routing.model_dump(),
+            "citations": [c.model_dump() for c in citations],
             "explanation_mode": req.explanation_mode
         }
     )
@@ -159,6 +210,9 @@ async def ask_question(
         sources=sources,
         web_search_used=web_search_used,
         document_used=document_used,
+        rag_mode="adaptive",
+        citations=citations,
+        routing_decision=routing.model_dump(),
         conversation_id=conv_id,
         message_id=assistant_msg["id"],
         warning=warning_msg
@@ -173,6 +227,9 @@ async def chat_continue(
     storage = get_storage_service()
     gemini = get_gemini_service()
     tavily = get_tavily_service()
+    router = get_adaptive_router()
+    retriever = get_hybrid_retriever()
+    reranker = get_contextual_reranker()
     user_id = current_user["id"]
 
     conv = storage.get_conversation(req.conversation_id, user_id)
@@ -190,24 +247,63 @@ async def chat_continue(
         content=req.message
     )
 
-    # Tavily search if needed
+    # 1. Adaptive Routing
+    user_docs = storage.list_documents(user_id)
+    routing = router.route(
+        query=req.message,
+        document_id=req.document_id,
+        use_web_search=req.use_web_search,
+        has_user_documents=bool(user_docs)
+    )
+
+    # 2. Document Context via Hybrid Retrieval + RRF + Reranking
+    document_context = None
+    document_used = False
+    citations: List[CitationItem] = []
+
+    target_doc_id = req.document_id
+    if not target_doc_id and routing.use_document and user_docs:
+        target_doc_id = user_docs[0]["id"]
+
+    if target_doc_id and routing.use_document:
+        doc = storage.get_document(target_doc_id, user_id)
+        if doc:
+            candidates = retriever.retrieve(
+                query=req.message,
+                document_id=target_doc_id,
+                user_id=user_id,
+                top_k=8
+            )
+            top_chunks, raw_citations = reranker.rerank(
+                query=req.message,
+                candidates=candidates,
+                document_meta=doc
+            )
+            if top_chunks:
+                document_context = ContextualReranker.build_context_block(
+                    top_chunks,
+                    filename=doc.get("file_name", "Document")
+                )
+                document_used = True
+                citations = [CitationItem(**c) for c in raw_citations]
+            else:
+                chunks = storage.get_document_chunks_for_context(target_doc_id, query=req.message, limit=4)
+                if chunks:
+                    document_context = "\n---\n".join(chunks)
+                    document_used = True
+
+    # 3. Web search via Tavily
     sources: List[SourceItem] = []
     web_search_used = False
     warning_msg = None
-    if tavily.should_search(req.message, req.use_web_search):
+    if routing.use_web:
         search_query = f"{active_subject} {active_topic} {req.message}"
-        sources = tavily.search(query=search_query, max_results=3)
-        if sources:
-            web_search_used = True
-
-    # Document context
-    document_context = None
-    document_used = False
-    if req.document_id:
-        chunks = storage.get_document_chunks_for_context(req.document_id, query=req.message, limit=4)
-        if chunks:
-            document_context = "\n---\n".join(chunks)
-            document_used = True
+        try:
+            sources = tavily.search(query=search_query, max_results=3)
+            if sources:
+                web_search_used = True
+        except Exception as e:
+            logger.error(f"Tavily search error in chat: {e}")
 
     # Recent history
     messages_history = conv.get("messages", [])
@@ -235,7 +331,10 @@ async def chat_continue(
         source_metadata={
             "sources": [s.model_dump() for s in sources],
             "web_search_used": web_search_used,
-            "document_used": document_used
+            "document_used": document_used,
+            "rag_mode": "adaptive",
+            "routing": routing.model_dump(),
+            "citations": [c.model_dump() for c in citations]
         }
     )
 
@@ -247,6 +346,9 @@ async def chat_continue(
         sources=sources,
         web_search_used=web_search_used,
         document_used=document_used,
+        rag_mode="adaptive",
+        citations=citations,
+        routing_decision=routing.model_dump(),
         conversation_id=req.conversation_id,
         message_id=asst_msg["id"],
         warning=warning_msg
@@ -395,9 +497,16 @@ async def upload_document(
     )
 
     try:
-        # Extract text & chunk
+        # Extract text & structure-aware chunking
         sections = processor.extract_text(save_path, file.content_type or "")
-        chunks = processor.chunk_document(sections)
+        chunks = processor.chunk_document(sections, doc_title=raw_name)
+
+        # Generate dense embeddings
+        texts = [ch["content"] for ch in chunks]
+        embeddings = get_embedding_service().embed_batch(texts)
+        for idx, ch in enumerate(chunks):
+            ch["embedding"] = embeddings[idx] if idx < len(embeddings) else None
+
         storage.save_document_chunks(doc["id"], chunks)
         storage.update_document_status(doc["id"], "COMPLETED")
     except Exception as e:
@@ -475,16 +584,38 @@ async def ask_document(
 ):
     storage = get_storage_service()
     gemini = get_gemini_service()
+    retriever = get_hybrid_retriever()
+    reranker = get_contextual_reranker()
 
     doc = storage.get_document(document_id, current_user["id"])
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found.")
 
-    chunks = storage.get_document_chunks_for_context(document_id, query=req.question, limit=6)
-    if not chunks:
-        raise HTTPException(status_code=400, detail="Document contains no readable text chunks.")
+    # 1. Hybrid Retrieval (Vector + Keyword) + RRF
+    candidates = retriever.retrieve(
+        query=req.question,
+        document_id=document_id,
+        user_id=current_user["id"],
+        top_k=8
+    )
 
-    doc_context = "\n---\n".join(chunks)
+    # 2. Contextual Reranking
+    top_chunks, raw_citations = reranker.rerank(
+        query=req.question,
+        candidates=candidates,
+        document_meta=doc
+    )
+
+    if not top_chunks:
+        # Fallback to basic chunk context if hybrid retrieval yields empty
+        chunks = storage.get_document_chunks_for_context(document_id, query=req.question, limit=6)
+        if not chunks:
+            raise HTTPException(status_code=400, detail="Document contains no readable text chunks.")
+        doc_context = "\n---\n".join(chunks)
+        citations = []
+    else:
+        doc_context = ContextualReranker.build_context_block(top_chunks, filename=doc.get("file_name", "Document"))
+        citations = [CitationItem(**c) for c in raw_citations]
 
     try:
         explanation = gemini.generate_explanation(
@@ -505,7 +636,15 @@ async def ask_document(
         explanation_mode=req.explanation_mode,
         sources=[],
         web_search_used=False,
-        document_used=True
+        document_used=True,
+        rag_mode="adaptive",
+        citations=citations,
+        routing_decision={
+            "intent": "DOCUMENT_RAG",
+            "use_document": True,
+            "use_web": False,
+            "reasoning": "Direct document ask executed via Hybrid Retrieval (Dense + Keyword FTS) + RRF + Contextual Reranking."
+        }
     )
 
 

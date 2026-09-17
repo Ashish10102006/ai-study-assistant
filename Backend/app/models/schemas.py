@@ -31,6 +31,16 @@ class AskRequest(BaseModel):
     conversation_id: Optional[str] = Field(None, description="Optional conversation ID to append to")
 
 
+class CitationItem(BaseModel):
+    document_id: Optional[str] = None
+    file_name: Optional[str] = None
+    chunk_index: Optional[int] = None
+    page: Optional[int] = 1
+    section: Optional[str] = None
+    snippet: Optional[str] = None
+    score: Optional[float] = None
+
+
 class AskResponse(BaseModel):
     answer: str
     subject: Optional[str] = None
@@ -39,6 +49,9 @@ class AskResponse(BaseModel):
     sources: List[SourceItem] = []
     web_search_used: bool = False
     document_used: bool = False
+    rag_mode: Optional[str] = "adaptive"
+    citations: List[CitationItem] = []
+    routing_decision: Optional[Dict[str, Any]] = None
     conversation_id: Optional[str] = None
     message_id: Optional[str] = None
     warning: Optional[str] = None

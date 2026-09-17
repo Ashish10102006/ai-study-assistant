@@ -89,9 +89,12 @@ class GeminiService:
             "Your mission: 'Ask. Understand. Learn. Master.'\n"
             "Guiding Principles:\n"
             "1. Academic Rigor: Ensure technical and scientific accuracy.\n"
-            "2. Student-Centric Pedagogy: Teach clearly without talking down.\n"
+            "2. Student-Centric Pedagogy: Teach clearly, concisely, and support understanding.\n"
             "3. Formatting: Use crisp Markdown with headings (##, ###), bullet points, bold key terms, and code blocks with language tags where applicable.\n"
-            "4. Honesty & Grounding: If document context is provided, strictly respect it. If web sources are provided, draw upon them and never invent fake citations."
+            "4. Grounding & Zero-Hallucination:\n"
+            "   - When 'Uploaded Document Context' is provided: Prioritize and ground your answer on it. If page numbers or sections are present, cite them (e.g., [Page X]). If the document does NOT contain enough information to fully answer the question, state that clearly before providing broader academic context.\n"
+            "   - When 'Verified Web Learning References' are provided: Draw upon them to enrich the answer and cite verified URLs. Never fabricate fake URLs or citations.\n"
+            "   - Clearly distinguish between information sourced from user notes, verified web sources, and general academic concepts."
         )
 
         prompt_parts = [
@@ -103,8 +106,8 @@ class GeminiService:
 
         if document_context:
             prompt_parts.append(
-                f"### Uploaded Document Context (Base your answer strictly on this content where relevant):\n"
-                f"\"\"\"\n{document_context[:4000]}\n\"\"\"\n"
+                f"### Uploaded Document Context (Base your answer strictly on this content where relevant; cite page/section where indicated):\n"
+                f"\"\"\"\n{document_context[:8000]}\n\"\"\"\n"
             )
 
         if web_sources:

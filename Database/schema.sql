@@ -4,6 +4,7 @@
 -- ==========================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "vector";
 
 -- ==========================================================
 -- 1. PROFILES TABLE
@@ -184,11 +185,14 @@ CREATE TABLE IF NOT EXISTS public.document_chunks (
     chunk_index INTEGER NOT NULL,
     content TEXT NOT NULL,
     metadata JSONB DEFAULT '{}'::jsonb,
+    embedding vector(768),
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_document_chunks_document_id ON public.document_chunks(document_id);
 CREATE INDEX IF NOT EXISTS idx_document_chunks_index ON public.document_chunks(document_id, chunk_index);
+CREATE INDEX IF NOT EXISTS idx_document_chunks_embedding ON public.document_chunks USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_document_chunks_fts ON public.document_chunks USING gin (to_tsvector('english', content));
 
 ALTER TABLE public.document_chunks ENABLE ROW LEVEL SECURITY;
 
