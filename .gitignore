@@ -1,0 +1,67 @@
+# Environment Variables & Secrets (CRITICAL)
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+Backend/.env
+Frontend/.env
+!**/.env.example
+
+# Local SQLite / Databases
+*.db
+*.sqlite
+*.sqlite3
+Backend/*.db
+Backend/study_assistant.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / Frontend
+node_modules/
+Frontend/node_modules/
+Frontend/dist/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Uploaded Files & Temporary Storage
+Backend/uploads/*
+!Backend/uploads/.gitkeep
+Backend/scratch_test.py
+scratch/
+*.scratch.*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

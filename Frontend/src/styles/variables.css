@@ -1,0 +1,59 @@
+:root {
+  /* Color Palette - Futuristic Academic Obsidian & Bioluminescent Accents */
+  --bg-primary: #07090e;
+  --bg-secondary: #0d121d;
+  --bg-tertiary: #131a29;
+  --bg-card: rgba(19, 26, 41, 0.72);
+  --bg-card-hover: rgba(26, 36, 56, 0.85);
+  --bg-card-active: rgba(32, 45, 71, 0.95);
+  --bg-glass: rgba(13, 18, 29, 0.75);
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-medium: rgba(255, 255, 255, 0.12);
+  --border-bright: rgba(0, 242, 254, 0.35);
+  --border-focus: #00f2fe;
+
+  /* Primary Brand Gradients */
+  --brand-cyan: #00f2fe;
+  --brand-blue: #4facfe;
+  --brand-purple: #8a2be2;
+  --brand-pink: #f72585;
+  --brand-emerald: #10b981;
+  --brand-amber: #f59e0b;
+  --brand-rose: #ef4444;
+
+  --grad-primary: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+  --grad-accent: linear-gradient(135deg, #8a2be2 0%, #f72585 100%);
+  --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+  --grad-hero-text: linear-gradient(135deg, #ffffff 30%, #a5b4fc 70%, #00f2fe 100%);
+  --grad-card: linear-gradient(145deg, rgba(25, 34, 54, 0.6) 0%, rgba(13, 18, 29, 0.8) 100%);
+
+  /* Text Colors */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-accent: #38bdf8;
+
+  /* Elevation & Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 16px 40px -8px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 25px rgba(0, 242, 254, 0.25);
+  --shadow-purple-glow: 0 0 25px rgba(138, 43, 226, 0.25);
+
+  /* Dimensions */
+  --navbar-height: 72px;
+  --sidebar-width: 280px;
+  --max-content-width: 1320px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
