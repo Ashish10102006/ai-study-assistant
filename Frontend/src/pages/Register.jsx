@@ -39,7 +39,7 @@ export default function Register() {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: 'calc(100vh - var(--navbar-height))',
-        padding: '2rem 1.5rem'
+        padding: 'clamp(1.5rem, 3vw, 2.5rem) var(--container-pad, 1rem)'
       }}
     >
       <div
@@ -47,16 +47,17 @@ export default function Register() {
         style={{
           width: '100%',
           maxWidth: '460px',
-          padding: '2.5rem',
-          border: '1px solid rgba(138, 43, 226, 0.3)'
+          padding: 'clamp(1.5rem, 4vw, 2.5rem)',
+          border: '1px solid rgba(138, 43, 226, 0.3)',
+          borderRadius: '20px'
         }}
       >
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div
             style={{
-              width: '54px',
-              height: '54px',
-              borderRadius: '16px',
+              width: '50px',
+              height: '50px',
+              borderRadius: '15px',
               background: 'var(--grad-accent)',
               display: 'flex',
               alignItems: 'center',
@@ -65,12 +66,12 @@ export default function Register() {
               color: '#fff'
             }}
           >
-            <Sparkles size={28} />
+            <Sparkles size={26} />
           </div>
-          <h2 style={{ fontSize: '1.8rem', color: '#fff', marginBottom: '0.4rem' }}>
+          <h2 style={{ fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', color: '#fff', marginBottom: '0.4rem' }}>
             Create Student Account
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
             Join AI STUDY ASSISTANT for free
           </p>
         </div>

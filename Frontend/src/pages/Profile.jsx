@@ -82,20 +82,20 @@ export default function Profile() {
   };
 
   return (
-    <div className="container" style={{ padding: '3rem 1.5rem', minHeight: '85vh', maxWidth: '800px' }}>
-      <div style={{ marginBottom: '2.5rem' }}>
+    <div className="container" style={{ padding: 'clamp(1.5rem, 3.5vw, 3rem) var(--container-pad, 1.5rem)', minHeight: '85vh', maxWidth: '800px' }}>
+      <div style={{ marginBottom: '2rem' }}>
         <span className="badge badge-cyan" style={{ marginBottom: '0.6rem' }}>
           Student Identity & Preferences
         </span>
-        <h1 style={{ fontSize: '2.4rem', color: '#fff', marginBottom: '0.4rem' }}>
+        <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.4rem)', color: '#fff', marginBottom: '0.4rem', lineHeight: 1.2 }}>
           Academic Profile
         </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
           Manage your personal university credentials and academic interest tags for customized AI tutoring.
         </p>
       </div>
 
-      <div className="glass-card" style={{ padding: '2.5rem' }}>
+      <div className="glass-card" style={{ padding: 'clamp(1.2rem, 3vw, 2.5rem)', borderRadius: '18px' }}>
         {savedSuccess && (
           <div
             style={{
@@ -107,16 +107,17 @@ export default function Profile() {
               marginBottom: '1.5rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '0.5rem',
+              fontSize: '0.88rem'
             }}
           >
-            <Check size={18} />
+            <Check size={18} style={{ flexShrink: 0 }} />
             <span>Profile information and academic interests updated successfully!</span>
           </div>
         )}
 
-        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
+        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '1.25rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
                 Full Name
@@ -142,7 +143,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '1.25rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
                 College / University
@@ -168,7 +169,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '1.25rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
                 Academic Year
@@ -215,18 +216,19 @@ export default function Profile() {
               Add specific topics or courses you are taking to personalize AI suggestions and quizzes.
             </p>
 
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
               <input
                 type="text"
                 value={interestInput}
                 onChange={(e) => setInterestInput(e.target.value)}
-                placeholder="e.g. Distributed Systems, Quantum Computing, Cryptography..."
+                placeholder="e.g. Distributed Systems, Cryptography..."
+                style={{ flex: '1 1 200px' }}
               />
               <button
                 type="button"
                 onClick={handleAddInterest}
                 className="btn btn-secondary"
-                style={{ whiteSpace: 'nowrap' }}
+                style={{ whiteSpace: 'nowrap', minHeight: '44px' }}
               >
                 Add Tag
               </button>
@@ -252,7 +254,7 @@ export default function Profile() {
                   <button
                     type="button"
                     onClick={() => handleRemoveInterest(item)}
-                    style={{ background: 'none', border: 'none', color: 'var(--brand-cyan)', cursor: 'pointer', fontWeight: '700' }}
+                    style={{ background: 'none', border: 'none', color: 'var(--brand-cyan)', cursor: 'pointer', fontWeight: '700', fontSize: '1rem', padding: '0 0.2rem' }}
                   >
                     ×
                   </button>
@@ -261,9 +263,9 @@ export default function Profile() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              <ShieldCheck size={16} color="#10b981" />
+              <ShieldCheck size={16} color="#10b981" style={{ flexShrink: 0 }} />
               <span>Row Level Security (RLS) Active: Private to you</span>
             </div>
 
@@ -271,7 +273,7 @@ export default function Profile() {
               type="submit"
               disabled={saving}
               className="btn btn-primary"
-              style={{ padding: '0.75rem 2rem', borderRadius: '12px' }}
+              style={{ padding: '0.75rem 2rem', borderRadius: '12px', minHeight: '44px', width: '100%', maxWidth: '200px', justifyContent: 'center' }}
             >
               <Save size={16} />
               <span>{saving ? 'Saving...' : 'Save Profile'}</span>

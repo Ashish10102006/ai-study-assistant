@@ -249,13 +249,15 @@ export default function Hero3DScene() {
   return (
     <div
       ref={mountRef}
+      className="canvas-container"
       style={{
         width: '100%',
-        height: '480px',
+        height: 'clamp(280px, 40vh, 480px)',
         position: 'relative',
         borderRadius: '24px',
         overflow: 'hidden',
-        pointerEvents: 'auto'
+        pointerEvents: 'auto',
+        touchAction: 'pan-y'
       }}
     />
   );

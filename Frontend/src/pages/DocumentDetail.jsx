@@ -84,7 +84,7 @@ export default function DocumentDetail() {
   }
 
   return (
-    <div className="container" style={{ padding: '3rem 1.5rem', minHeight: '85vh' }}>
+    <div className="container" style={{ padding: 'clamp(1.5rem, 3.5vw, 3rem) var(--container-pad, 1.5rem)', minHeight: '85vh' }}>
       <button
         onClick={() => navigate('/materials')}
         style={{
@@ -95,7 +95,9 @@ export default function DocumentDetail() {
           fontSize: '0.9rem',
           marginBottom: '1.5rem',
           background: 'none',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          padding: '0.5rem 0',
+          minHeight: '44px'
         }}
       >
         <ArrowLeft size={16} />
@@ -106,36 +108,37 @@ export default function DocumentDetail() {
       <div
         className="glass-card"
         style={{
-          padding: '2rem',
-          marginBottom: '2.5rem',
+          padding: 'clamp(1.2rem, 3vw, 2rem)',
+          marginBottom: '2rem',
           display: 'flex',
           flexWrap: 'wrap',
           justifyContent: 'space-between',
           alignItems: 'center',
-          gap: '1.5rem'
+          gap: '1.5rem',
+          borderRadius: '18px'
         }}
       >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+        <div style={{ flex: '1 1 280px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
             <span className="badge badge-purple">Grounded Document</span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               Status: {document.processing_status}
             </span>
           </div>
-          <h1 style={{ fontSize: '2rem', color: '#fff', marginBottom: '0.4rem' }}>
+          <h1 style={{ fontSize: 'clamp(1.35rem, 3.5vw, 2rem)', color: '#fff', marginBottom: '0.4rem', wordBreak: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.25 }}>
             {document.file_name}
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             {document.chunks_count} Extracted Text Chunks • {(document.file_size / 1024 / 1024).toFixed(2)} MB
           </p>
         </div>
 
         {/* Action Shortcuts */}
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', width: '100%', maxWidth: '520px' }}>
           <button
             onClick={() => navigate('/study', { state: { selectedDocId: document.id, tab: 'notes' } })}
             className="btn btn-secondary"
-            style={{ fontSize: '0.85rem' }}
+            style={{ fontSize: '0.85rem', flex: '1 1 140px', justifyContent: 'center', minHeight: '44px' }}
           >
             <BookMarked size={16} />
             <span>Generate Notes</span>
@@ -143,7 +146,7 @@ export default function DocumentDetail() {
           <button
             onClick={() => navigate('/study', { state: { selectedDocId: document.id, tab: 'quiz' } })}
             className="btn btn-secondary"
-            style={{ fontSize: '0.85rem' }}
+            style={{ fontSize: '0.85rem', flex: '1 1 140px', justifyContent: 'center', minHeight: '44px' }}
           >
             <CheckSquare size={16} />
             <span>Generate Quiz</span>
@@ -151,7 +154,7 @@ export default function DocumentDetail() {
           <button
             onClick={() => navigate('/study', { state: { selectedDocId: document.id, tab: 'questions' } })}
             className="btn btn-primary"
-            style={{ fontSize: '0.85rem' }}
+            style={{ fontSize: '0.85rem', flex: '1 1 140px', justifyContent: 'center', minHeight: '44px' }}
           >
             <HelpCircle size={16} />
             <span>Practice Problems</span>
@@ -160,30 +163,30 @@ export default function DocumentDetail() {
       </div>
 
       {/* Grounded Q&A Bar */}
-      <div className="glass-card" style={{ padding: '2rem', marginBottom: '2.5rem' }}>
-        <h3 style={{ fontSize: '1.3rem', color: '#fff', marginBottom: '0.4rem' }}>
+      <div className="glass-card" style={{ padding: 'clamp(1.2rem, 3vw, 2rem)', marginBottom: '2rem', borderRadius: '18px' }}>
+        <h3 style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.3rem)', color: '#fff', marginBottom: '0.4rem' }}>
           Ask Questions Grounded Strictly In This Document
         </h3>
-        <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem', lineHeight: 1.45 }}>
           Answers will only use facts extracted from this document. If not present in the document, the AI will honestly state so.
         </p>
 
-        <form onSubmit={handleAskDoc} style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <form onSubmit={handleAskDoc} style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem' }}>
           <input
             type="text"
             value={docQuestion}
             onChange={(e) => setDocQuestion(e.target.value)}
-            placeholder="e.g. What are the key points in Chapter 2? Explain the main theorem..."
-            style={{ borderRadius: '14px', height: '50px' }}
+            placeholder="e.g. What are the key points? Explain the main theorem..."
+            style={{ borderRadius: '14px', height: '48px', flex: '1 1 240px', minWidth: '0' }}
           />
           <button
             type="submit"
             disabled={answering || !docQuestion.trim()}
             className="btn btn-primary"
-            style={{ height: '50px', padding: '0 1.5rem', borderRadius: '14px', whiteSpace: 'nowrap' }}
+            style={{ height: '48px', padding: '0 1.25rem', borderRadius: '14px', whiteSpace: 'nowrap', flex: '0 1 auto', minWidth: '130px', justifyContent: 'center' }}
           >
             <Send size={18} />
-            <span>Ask Document</span>
+            <span>Ask Doc</span>
           </button>
         </form>
 
@@ -192,26 +195,26 @@ export default function DocumentDetail() {
         {docAnswer && (
           <div
             style={{
-              padding: '1.5rem',
+              padding: 'clamp(1rem, 2.5vw, 1.5rem)',
               borderRadius: '14px',
               background: 'rgba(10, 15, 26, 0.85)',
               border: '1px solid rgba(0, 242, 254, 0.25)',
               position: 'relative'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--brand-cyan)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--brand-cyan)', letterSpacing: '0.05em' }}>
                 DOCUMENT GROUNDED ANSWER
               </span>
               <button
                 onClick={handleCopy}
-                style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem' }}
+                style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.78rem', minHeight: '36px', padding: '0 0.5rem' }}
               >
                 {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
                 <span>{copied ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
-            <div>
+            <div style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
               <MarkdownRenderer content={docAnswer} />
             </div>
           </div>
@@ -220,7 +223,7 @@ export default function DocumentDetail() {
 
       {/* Extracted Chunks Preview */}
       <div>
-        <h3 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: '#fff' }}>
+        <h3 style={{ fontSize: 'clamp(1.15rem, 2.5vw, 1.3rem)', marginBottom: '1rem', color: '#fff' }}>
           Extracted Document Chunks ({document.preview_chunks?.length || 0})
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -228,8 +231,8 @@ export default function DocumentDetail() {
             <div
               key={chunk.id}
               style={{
-                padding: '1.25rem',
-                borderRadius: '12px',
+                padding: 'clamp(1rem, 2vw, 1.25rem)',
+                borderRadius: '14px',
                 background: 'rgba(15, 23, 42, 0.5)',
                 border: '1px solid rgba(255, 255, 255, 0.06)'
               }}
@@ -238,7 +241,7 @@ export default function DocumentDetail() {
                 <span>Chunk #{chunk.chunk_index + 1}</span>
                 {chunk.metadata?.page && <span>Page {chunk.metadata.page}</span>}
               </div>
-              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: '1.55' }}>
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: '1.55', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                 {chunk.content}
               </p>
             </div>

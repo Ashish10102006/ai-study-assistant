@@ -254,16 +254,16 @@ export default function StudyAssistant() {
           justifyContent: 'space-between'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: '700', color: 'var(--brand-cyan)', fontSize: '0.9rem' }}>
-            STUDY CONTEXT:
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', width: '100%' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--brand-cyan)', fontWeight: '700', flexShrink: 0 }}>
+            STUDY FOCUS:
           </span>
 
           {/* Subject Dropdown */}
           <select
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            style={{ width: 'auto', minWidth: '170px', padding: '0.5rem 0.85rem' }}
+            style={{ flex: '1 1 160px', minWidth: '140px', padding: '0.5rem 0.85rem' }}
           >
             <option value="Computer Science">Computer Science</option>
             <option value="Data Structures">Data Structures</option>
@@ -284,15 +284,15 @@ export default function StudyAssistant() {
             type="text"
             value={customTopic}
             onChange={(e) => setCustomTopic(e.target.value)}
-            placeholder="Custom Topic (e.g. TCP Handshake, Normalization...)"
-            style={{ width: 'auto', minWidth: '260px', padding: '0.5rem 0.85rem' }}
+            placeholder="Topic (e.g. TCP Handshake, Normalization...)"
+            style={{ flex: '2 1 200px', minWidth: '180px', padding: '0.5rem 0.85rem' }}
           />
 
           {/* Attached Document Filter */}
           <select
             value={selectedDocumentId}
             onChange={(e) => setSelectedDocumentId(e.target.value)}
-            style={{ width: 'auto', minWidth: '180px', padding: '0.5rem 0.85rem' }}
+            style={{ flex: '1 1 160px', minWidth: '140px', padding: '0.5rem 0.85rem' }}
           >
             <option value="">No Document Attached</option>
             {uploadedDocuments.map(doc => (
@@ -301,19 +301,18 @@ export default function StudyAssistant() {
               </option>
             ))}
           </select>
-        </div>
 
-        {/* Web Search & Modes Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {/* Web Search Toggle */}
           <button
             onClick={() => setUseWebSearch(!useWebSearch)}
             className="btn"
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.5rem 0.95rem',
               fontSize: '0.85rem',
               background: useWebSearch ? 'rgba(0, 242, 254, 0.15)' : 'rgba(255, 255, 255, 0.05)',
               border: `1px solid ${useWebSearch ? 'var(--brand-cyan)' : 'var(--border-medium)'}`,
-              color: useWebSearch ? 'var(--brand-cyan)' : 'var(--text-secondary)'
+              color: useWebSearch ? 'var(--brand-cyan)' : 'var(--text-secondary)',
+              flexShrink: 0
             }}
           >
             <Globe size={15} />
@@ -322,8 +321,8 @@ export default function StudyAssistant() {
         </div>
       </div>
 
-      {/* Tabs Navigation (Assistant vs Notes vs Quiz vs Practice Questions) */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem' }}>
+      {/* Tabs Navigation (Horizontal Swipeable Row on Mobile) */}
+      <div className="mobile-scroll-row" style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem' }}>
         {[
           { id: 'assistant', label: 'AI Study Chat', icon: <Sparkles size={16} /> },
           { id: 'notes', label: 'Structured Notes', icon: <BookMarked size={16} /> },
@@ -333,18 +332,20 @@ export default function StudyAssistant() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
+            className="mobile-scroll-item"
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              padding: '0.65rem 1.25rem',
+              padding: '0.65rem 1.15rem',
               borderRadius: '12px',
               fontWeight: '600',
               fontSize: '0.9rem',
-              background: activeTab === tab.id ? 'rgba(0, 242, 254, 0.1)' : 'transparent',
+              background: activeTab === tab.id ? 'rgba(0, 242, 254, 0.12)' : 'transparent',
               color: activeTab === tab.id ? 'var(--brand-cyan)' : 'var(--text-secondary)',
               border: activeTab === tab.id ? '1px solid rgba(0, 242, 254, 0.3)' : '1px solid transparent',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
             }}
           >
             {tab.icon}
@@ -378,23 +379,23 @@ export default function StudyAssistant() {
           TAB 1: AI STUDY CONVERSATIONAL CHAT
           ========================================================== */}
       {activeTab === 'assistant' && (
-        <div style={{ display: 'grid', gridTemplateColumns: activeSources.length > 0 ? '1fr 340px' : '1fr', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: activeSources.length > 0 ? 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))' : '1fr', gap: '1.5rem' }}>
           {/* Main Chat Area */}
-          <div style={{ display: 'flex', flexDirection: 'column', height: '650px' }} className="glass-card">
-            {/* Explanation Mode Selector Bar */}
+          <div style={{ display: 'flex', flexDirection: 'column', height: 'min(650px, 78vh)' }} className="glass-card">
+            {/* Explanation Mode Selector Bar (Swipeable Row) */}
             <div
+              className="mobile-scroll-row"
               style={{
-                padding: '0.75rem 1.25rem',
+                padding: '0.75rem 1rem',
                 borderBottom: '1px solid var(--border-subtle)',
-                display: 'flex',
-                gap: '0.5rem',
-                overflowX: 'auto'
+                gap: '0.5rem'
               }}
             >
               {EXPLANATION_MODES.map(mode => (
                 <button
                   key={mode.id}
                   onClick={() => setExplanationMode(mode.id)}
+                  className="mobile-scroll-item"
                   style={{
                     padding: '0.4rem 0.85rem',
                     borderRadius: '8px',
@@ -434,7 +435,7 @@ export default function StudyAssistant() {
                     key={m.id}
                     style={{
                       alignSelf: isUser ? 'flex-end' : 'flex-start',
-                      maxWidth: isUser ? '80%' : '90%',
+                      maxWidth: isUser ? '88%' : '96%',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '0.4rem'
@@ -442,38 +443,38 @@ export default function StudyAssistant() {
                   >
                     <div
                       style={{
-                        padding: '1.25rem 1.5rem',
-                        borderRadius: '18px',
+                        padding: 'clamp(0.9rem, 2.5vw, 1.35rem)',
+                        borderRadius: '16px',
                         background: isUser
                           ? 'linear-gradient(135deg, rgba(0, 242, 254, 0.15) 0%, rgba(79, 172, 254, 0.2) 100%)'
                           : 'rgba(15, 22, 36, 0.85)',
                         border: `1px solid ${isUser ? 'rgba(0, 242, 254, 0.3)' : 'rgba(255, 255, 255, 0.08)'}`,
                         color: '#f8fafc',
                         lineHeight: '1.65',
-                        fontSize: '0.96rem',
+                        fontSize: '0.94rem',
                         position: 'relative'
                       }}
                     >
                       {/* Meta header for AI answers */}
                       {!isUser && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', paddingBottom: '0.6rem', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: 'var(--brand-cyan)', fontWeight: '700' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', flexWrap: 'wrap', gap: '0.4rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.75rem', color: 'var(--brand-cyan)', fontWeight: '700', flexWrap: 'wrap' }}>
                             <Sparkles size={14} />
-                            <span>AI STUDY ASSISTANT (Gemini)</span>
+                            <span>AI STUDY ASSISTANT</span>
                             {m.document_used && (
-                              <span style={{ color: '#c084fc', background: 'rgba(192, 132, 252, 0.1)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
-                                Document Grounded
+                              <span style={{ color: '#c084fc', background: 'rgba(192, 132, 252, 0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
+                                Document
                               </span>
                             )}
                             {m.web_search_used && (
-                              <span style={{ color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
-                                Verified Web Sources
+                              <span style={{ color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
+                                Web Sources
                               </span>
                             )}
                           </div>
                           <button
                             onClick={() => copyContent(m.content, m.id)}
-                            style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem' }}
+                            style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', padding: '0.2rem 0.4rem' }}
                           >
                             {copiedId === m.id ? <Check size={13} color="#10b981" /> : <Copy size={13} />}
                             <span>{copiedId === m.id ? 'Copied' : 'Copy'}</span>
@@ -499,21 +500,22 @@ export default function StudyAssistant() {
             </div>
 
             {/* Input Box Bar */}
-            <div style={{ padding: '1.25rem', borderTop: '1px solid var(--border-subtle)', background: 'rgba(7, 10, 16, 0.7)' }}>
-              <form onSubmit={handleFollowUp} style={{ display: 'flex', gap: '0.75rem' }}>
+            <div style={{ padding: '0.85rem 1rem', borderTop: '1px solid var(--border-subtle)', background: 'rgba(7, 10, 16, 0.85)' }}>
+              <form onSubmit={handleFollowUp} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <input
                   type="text"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="Ask follow-up question or new concept..."
+                  placeholder="Ask a question or concept..."
                   disabled={loading}
-                  style={{ borderRadius: '14px', height: '50px' }}
+                  style={{ flex: '1 1 auto', minWidth: 0, borderRadius: '14px', height: '48px', padding: '0 1rem' }}
                 />
                 <button
                   type="submit"
                   disabled={loading || !question.trim()}
                   className="btn btn-primary"
-                  style={{ height: '50px', padding: '0 1.5rem', borderRadius: '14px' }}
+                  style={{ width: '48px', height: '48px', minWidth: '48px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px', flexShrink: 0 }}
+                  aria-label="Send question"
                 >
                   <Send size={18} />
                 </button>
@@ -545,10 +547,10 @@ export default function StudyAssistant() {
           TAB 2: STRUCTURED STUDY NOTES
           ========================================================== */}
       {activeTab === 'notes' && (
-        <div className="glass-card" style={{ padding: '2.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-            <div>
-              <h3 style={{ fontSize: '1.6rem', color: '#fff' }}>
+        <div className="glass-card" style={{ padding: 'clamp(1.25rem, 3.5vw, 2.5rem)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ flex: '1 1 260px' }}>
+              <h3 style={{ fontSize: '1.5rem', color: '#fff' }}>
                 Structured Study Notes Generator
               </h3>
               <p style={{ color: 'var(--text-secondary)' }}>
@@ -589,10 +591,10 @@ export default function StudyAssistant() {
           TAB 3: QUIZ ARENA
           ========================================================== */}
       {activeTab === 'quiz' && (
-        <div className="glass-card" style={{ padding: '2.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-            <div>
-              <h3 style={{ fontSize: '1.6rem', color: '#fff' }}>
+        <div className="glass-card" style={{ padding: 'clamp(1.25rem, 3.5vw, 2.5rem)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ flex: '1 1 260px' }}>
+              <h3 style={{ fontSize: '1.5rem', color: '#fff' }}>
                 Academic Quiz Arena
               </h3>
               <p style={{ color: 'var(--text-secondary)' }}>
@@ -719,10 +721,10 @@ export default function StudyAssistant() {
           TAB 4: PRACTICE PROBLEMS
           ========================================================== */}
       {activeTab === 'questions' && (
-        <div className="glass-card" style={{ padding: '2.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-            <div>
-              <h3 style={{ fontSize: '1.6rem', color: '#fff' }}>
+        <div className="glass-card" style={{ padding: 'clamp(1.25rem, 3.5vw, 2.5rem)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ flex: '1 1 260px' }}>
+              <h3 style={{ fontSize: '1.5rem', color: '#fff' }}>
                 Practice Problem Sets
               </h3>
               <p style={{ color: 'var(--text-secondary)' }}>

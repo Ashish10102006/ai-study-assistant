@@ -38,7 +38,7 @@ export default function Login() {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: 'calc(100vh - var(--navbar-height))',
-        padding: '2rem 1.5rem'
+        padding: 'clamp(1.5rem, 3vw, 2.5rem) var(--container-pad, 1rem)'
       }}
     >
       <div
@@ -46,16 +46,17 @@ export default function Login() {
         style={{
           width: '100%',
           maxWidth: '440px',
-          padding: '2.5rem',
-          border: '1px solid rgba(0, 242, 254, 0.2)'
+          padding: 'clamp(1.5rem, 4vw, 2.5rem)',
+          border: '1px solid rgba(0, 242, 254, 0.2)',
+          borderRadius: '20px'
         }}
       >
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div
             style={{
-              width: '54px',
-              height: '54px',
-              borderRadius: '16px',
+              width: '50px',
+              height: '50px',
+              borderRadius: '15px',
               background: 'var(--grad-primary)',
               display: 'flex',
               alignItems: 'center',
@@ -64,12 +65,12 @@ export default function Login() {
               color: '#030712'
             }}
           >
-            <Brain size={28} />
+            <Brain size={26} />
           </div>
-          <h2 style={{ fontSize: '1.8rem', color: '#fff', marginBottom: '0.4rem' }}>
+          <h2 style={{ fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', color: '#fff', marginBottom: '0.4rem' }}>
             Welcome Back
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
             Sign in to AI STUDY ASSISTANT
           </p>
         </div>

@@ -61,8 +61,8 @@ export default function Dashboard() {
       <div
         className="glass-card"
         style={{
-          padding: '2.5rem',
-          marginBottom: '2.5rem',
+          padding: 'clamp(1.25rem, 3.5vw, 2.5rem)',
+          marginBottom: '2rem',
           background: 'linear-gradient(135deg, rgba(13, 20, 34, 0.9) 0%, rgba(19, 27, 44, 0.7) 100%)',
           border: '1px solid rgba(0, 242, 254, 0.25)',
           display: 'flex',
@@ -72,29 +72,29 @@ export default function Dashboard() {
           gap: '1.5rem'
         }}
       >
-        <div>
+        <div style={{ flex: '1 1 280px' }}>
           <span className="badge badge-cyan" style={{ marginBottom: '0.6rem' }}>
             Student Learning Command Center
           </span>
-          <h1 style={{ fontSize: '2.2rem', marginBottom: '0.4rem', color: '#fff' }}>
+          <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.2rem)', marginBottom: '0.4rem', color: '#fff' }}>
             Welcome Back, {studentName}! 🎓
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>
             "Ask. Understand. Learn. Master." Ready for your next study milestone?
           </p>
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', gap: '0.85rem', marginTop: '1rem', fontSize: '0.82rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
             <span>🏫 {profile?.college || 'Engineering College'}</span>
             <span>📚 {profile?.course || 'Computer Science'}</span>
             <span>🗓️ {profile?.year || '3rd Year'}</span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <Link to="/study" className="btn btn-primary btn-glow" style={{ padding: '0.75rem 1.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', width: 'auto' }}>
+          <Link to="/study" className="btn btn-primary btn-glow" style={{ padding: '0.75rem 1.4rem', flex: '1 1 150px' }}>
             <Sparkles size={18} />
-            <span>Open AI Assistant</span>
+            <span>AI Assistant</span>
           </Link>
-          <Link to="/materials" className="btn btn-secondary" style={{ padding: '0.75rem 1.4rem' }}>
+          <Link to="/materials" className="btn btn-secondary" style={{ padding: '0.75rem 1.25rem', flex: '1 1 140px' }}>
             <Upload size={18} />
             <span>Upload Notes</span>
           </Link>
@@ -104,24 +104,24 @@ export default function Dashboard() {
       {/* ==========================================================
           2. ASK AI QUICK LAUNCHER
           ========================================================== */}
-      <div className="glass-card" style={{ padding: '1.75rem', marginBottom: '2.5rem' }}>
-        <form onSubmit={handleAskSubmit} style={{ display: 'flex', gap: '0.75rem' }}>
+      <div className="glass-card" style={{ padding: 'clamp(1rem, 2.5vw, 1.75rem)', marginBottom: '2rem' }}>
+        <form onSubmit={handleAskSubmit} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <input
             type="text"
             value={quickQuery}
             onChange={(e) => setQuickQuery(e.target.value)}
             placeholder="Ask any academic question to start an instant study session..."
-            style={{ borderRadius: '14px', height: '52px', fontSize: '1rem' }}
+            style={{ flex: '1 1 220px', minWidth: 0, borderRadius: '14px', height: '50px', fontSize: '1rem' }}
           />
-          <button type="submit" className="btn btn-primary" style={{ height: '52px', padding: '0 1.75rem', borderRadius: '14px' }}>
+          <button type="submit" className="btn btn-primary" style={{ flex: '0 0 auto', height: '50px', padding: '0 1.5rem', borderRadius: '14px', whiteSpace: 'nowrap' }}>
             <Send size={18} />
             <span>Ask AI</span>
           </button>
         </form>
       </div>
 
-      {/* Grid: 2 Columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
+      {/* Grid: 2 Columns (Responsive to 1 Col on Mobile) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
         {/* ==========================================================
             3. RECENT CONVERSATIONS
             ========================================================== */}

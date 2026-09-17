@@ -293,7 +293,7 @@ input::placeholder, textarea::placeholder {
 }
 
 /* ==========================================================
-   NAVBAR RESPONSIVE UTILITIES
+   NAVBAR & MOBILE NAVIGATION UTILITIES
    ========================================================== */
 .nav-desktop {
   display: flex !important;
@@ -305,6 +305,24 @@ input::placeholder, textarea::placeholder {
   display: none !important;
 }
 
+.nav-mobile-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: slideDown 0.25s ease-out forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 900px) {
   .nav-desktop {
     display: none !important;
@@ -312,5 +330,119 @@ input::placeholder, textarea::placeholder {
   .nav-mobile-btn {
     display: flex !important;
   }
+}
+
+/* ==========================================================
+   ANDROID & MOBILE OPTIMIZATIONS
+   ========================================================== */
+
+/* 1. Safe Area & Mobile Containers */
+@media (max-width: 640px) {
+  :root {
+    --navbar-height: var(--navbar-height-mobile);
+  }
+
+  .container {
+    padding-left: max(1rem, var(--safe-area-left));
+    padding-right: max(1rem, var(--safe-area-right));
+  }
+
+  .glass-card {
+    border-radius: var(--radius-md);
+  }
+
+  /* Compact typography on small screens */
+  h1 { font-size: clamp(1.75rem, 6.5vw, 2.4rem); }
+  h2 { font-size: clamp(1.4rem, 5vw, 1.85rem); }
+  h3 { font-size: clamp(1.15rem, 4vw, 1.45rem); }
+}
+
+@media (max-width: 380px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* 2. Touch Target Guidelines (Android Material standard: min 44-48px) */
+@media (max-width: 768px) {
+  input, select, textarea, .btn {
+    min-height: 48px;
+    font-size: 16px !important; /* Prevents auto-zoom in Android Chrome & iOS Safari */
+  }
+
+  .btn {
+    padding: 0.75rem 1.25rem;
+  }
+
+  .card-3d:hover {
+    transform: none; /* Disable 3D tilt hover on touch screens to prevent stutter */
+  }
+}
+
+/* 3. Horizontal Scrollable Pill Bar (No ugly scrollbars on mobile) */
+.mobile-scroll-row {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-snap-type: x proximity;
+  gap: 0.5rem;
+  padding-bottom: 0.35rem;
+}
+
+.mobile-scroll-row::-webkit-scrollbar {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+.mobile-scroll-item {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+/* 4. Responsive Grid Helpers */
+.grid-responsive-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.grid-responsive-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .grid-responsive-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid-responsive-2,
+  .grid-responsive-3 {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* 5. Touch Action & Overflow Protection */
+canvas, .canvas-container {
+  touch-action: pan-y !important; /* Allows smooth page scroll over 3D canvases */
+}
+
+p, li, span, h1, h2, h3, h4, h5, h6 {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+pre, code, table {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 

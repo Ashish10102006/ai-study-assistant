@@ -80,8 +80,8 @@ export default function Home() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: '2.5rem',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+              gap: '2rem',
               alignItems: 'center'
             }}
           >
@@ -198,7 +198,7 @@ export default function Home() {
           <div
             className="glass-card"
             style={{
-              padding: '2.5rem',
+              padding: 'clamp(1.25rem, 3.5vw, 2.5rem)',
               border: '1px solid rgba(0, 242, 254, 0.2)',
               boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 35px rgba(0, 242, 254, 0.1)'
             }}
@@ -213,7 +213,8 @@ export default function Home() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#030712'
+                  color: '#030712',
+                  flexShrink: 0
                 }}
               >
                 <Sparkles size={20} />
@@ -231,7 +232,7 @@ export default function Home() {
                 style={{
                   display: 'flex',
                   gap: '0.75rem',
-                  flexDirection: window.innerWidth < 640 ? 'column' : 'row'
+                  flexWrap: 'wrap'
                 }}
               >
                 <input
@@ -240,8 +241,9 @@ export default function Home() {
                   onChange={(e) => setQuickQuestion(e.target.value)}
                   placeholder="e.g. Explain how B-Trees maintain logarithmic depth during node split..."
                   style={{
-                    height: '56px',
-                    fontSize: '1.05rem',
+                    flex: '1 1 240px',
+                    minHeight: '52px',
+                    fontSize: '1rem',
                     borderRadius: '14px',
                     padding: '0 1.25rem',
                     background: 'rgba(7, 10, 16, 0.8)'
@@ -250,7 +252,14 @@ export default function Home() {
                 <button
                   type="submit"
                   className="btn btn-primary btn-glow"
-                  style={{ height: '56px', padding: '0 1.75rem', borderRadius: '14px', whiteSpace: 'nowrap' }}
+                  style={{
+                    flex: '0 0 auto',
+                    minHeight: '52px',
+                    padding: '0 1.75rem',
+                    borderRadius: '14px',
+                    whiteSpace: 'nowrap',
+                    width: 'auto'
+                  }}
                 >
                   <Send size={18} />
                   <span>Ask AI Assistant</span>

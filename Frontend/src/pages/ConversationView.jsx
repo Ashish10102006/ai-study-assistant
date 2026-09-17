@@ -117,33 +117,33 @@ export default function ConversationView() {
   }
 
   return (
-    <div className="container" style={{ padding: '2.5rem 1.5rem', minHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="container" style={{ padding: 'clamp(1rem, 2.5vw, 2.5rem) var(--container-pad, 1.5rem)', minHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', gap: '0.75rem', flexWrap: 'wrap' }}>
         <button
           onClick={() => navigate('/conversations')}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', background: 'none', cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', background: 'none', cursor: 'pointer', padding: '0.4rem 0', minHeight: '44px' }}
         >
           <ArrowLeft size={16} />
-          <span>All Conversations</span>
+          <span style={{ fontSize: '0.9rem' }}>All Conversations</span>
         </button>
 
-        <span className="badge badge-cyan">
+        <span className="badge badge-cyan" style={{ fontSize: '0.78rem' }}>
           {conversation.subject || 'Academic Session'}
         </span>
       </div>
 
       {/* Main Chat Box */}
-      <div className="glass-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '650px', overflow: 'hidden' }}>
+      <div className="glass-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: 'clamp(460px, 72vh, 680px)', overflow: 'hidden', borderRadius: '18px' }}>
         {/* Chat Title Bar */}
-        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(10, 14, 23, 0.7)' }}>
-          <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0 }}>
+        <div style={{ padding: '0.9rem clamp(1rem, 2.5vw, 1.5rem)', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(10, 14, 23, 0.7)' }}>
+          <h2 style={{ fontSize: 'clamp(1.05rem, 2.5vw, 1.25rem)', color: '#fff', margin: 0, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
             {conversation.title}
           </h2>
         </div>
 
         {/* Message Log */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 'clamp(0.9rem, 2.5vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {messages.map((m) => {
             const isUser = m.role === 'USER';
             const meta = m.source_metadata || {};
@@ -154,33 +154,35 @@ export default function ConversationView() {
                 key={m.id}
                 style={{
                   alignSelf: isUser ? 'flex-end' : 'flex-start',
-                  maxWidth: isUser ? '80%' : '90%',
+                  maxWidth: isUser ? '88%' : '96%',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '0.4rem'
+                  gap: '0.35rem'
                 }}
               >
                 <div
                   style={{
-                    padding: '1.25rem 1.5rem',
-                    borderRadius: '18px',
+                    padding: 'clamp(0.85rem, 2.5vw, 1.25rem) clamp(1rem, 3vw, 1.5rem)',
+                    borderRadius: '16px',
                     background: isUser
                       ? 'linear-gradient(135deg, rgba(0, 242, 254, 0.15) 0%, rgba(79, 172, 254, 0.2) 100%)'
                       : 'rgba(15, 22, 36, 0.85)',
                     border: `1px solid ${isUser ? 'rgba(0, 242, 254, 0.3)' : 'rgba(255, 255, 255, 0.08)'}`,
                     color: '#f8fafc',
-                    lineHeight: '1.65',
-                    fontSize: '0.96rem'
+                    lineHeight: '1.6',
+                    fontSize: 'clamp(0.88rem, 2vw, 0.96rem)',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'anywhere'
                   }}
                 >
                   {!isUser && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                      <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--brand-cyan)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', paddingBottom: '0.45rem', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--brand-cyan)' }}>
                         AI STUDY ASSISTANT
                       </span>
                       <button
                         onClick={() => copyText(m.content, m.id)}
-                        style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem' }}
+                        style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', minHeight: '36px', padding: '0 0.4rem' }}
                       >
                         {copiedId === m.id ? <Check size={13} color="#10b981" /> : <Copy size={13} />}
                         <span>{copiedId === m.id ? 'Copied' : 'Copy'}</span>
@@ -197,11 +199,11 @@ export default function ConversationView() {
                   )}
 
                   {sources.length > 0 && (
-                    <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                      <div style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--brand-cyan)', marginBottom: '0.5rem' }}>
+                    <div style={{ marginTop: '0.85rem', paddingTop: '0.65rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--brand-cyan)', marginBottom: '0.4rem' }}>
                         VERIFIED SOURCES CONSULTED:
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                         {sources.map((s, idx) => (
                           <SourceBadge key={idx} source={s} />
                         ))}
@@ -218,21 +220,21 @@ export default function ConversationView() {
         </div>
 
         {/* Input Bar */}
-        <div style={{ padding: '1.25rem', borderTop: '1px solid var(--border-subtle)', background: 'rgba(7, 10, 16, 0.8)' }}>
-          <form onSubmit={handleSend} style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ padding: 'clamp(0.75rem, 2vw, 1.25rem)', borderTop: '1px solid var(--border-subtle)', background: 'rgba(7, 10, 16, 0.8)' }}>
+          <form onSubmit={handleSend} style={{ display: 'flex', gap: '0.65rem' }}>
             <input
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Ask a follow-up question to continue this conversation..."
+              placeholder="Ask a follow-up question..."
               disabled={answering}
-              style={{ borderRadius: '14px', height: '50px' }}
+              style={{ borderRadius: '14px', height: '48px', flex: 1 }}
             />
             <button
               type="submit"
               disabled={answering || !inputMessage.trim()}
               className="btn btn-primary"
-              style={{ height: '50px', padding: '0 1.5rem', borderRadius: '14px' }}
+              style={{ height: '48px', minWidth: '48px', padding: '0 1.25rem', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <Send size={18} />
             </button>

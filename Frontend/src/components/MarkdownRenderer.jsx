@@ -130,14 +130,16 @@ export default function MarkdownRenderer({ content, style = {} }) {
               background: '#090d16',
               border: '1px solid rgba(255, 255, 255, 0.1)',
               borderRadius: '10px',
-              padding: '1rem',
+              padding: '0.85rem 1rem',
               margin: '0.85rem 0',
               overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              maxWidth: '100%',
               fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '0.88rem'
+              fontSize: '0.85rem'
             }}
           >
-            <pre style={{ margin: 0, color: '#e2e8f0', whiteSpace: 'pre-wrap' }}>
+            <pre style={{ margin: 0, color: '#e2e8f0', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
               {codeBlockContent.join('\n')}
             </pre>
           </div>
@@ -280,5 +282,5 @@ export default function MarkdownRenderer({ content, style = {} }) {
 
   flushList();
 
-  return <div style={{ fontSize: '0.96rem', ...style }}>{elements}</div>;
+  return <div style={{ fontSize: '0.96rem', maxWidth: '100%', wordBreak: 'break-word', overflowWrap: 'anywhere', ...style }}>{elements}</div>;
 }

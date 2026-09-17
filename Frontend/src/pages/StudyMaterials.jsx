@@ -73,15 +73,15 @@ export default function StudyMaterials() {
   };
 
   return (
-    <div className="container" style={{ padding: '3rem 1.5rem', minHeight: '85vh' }}>
+    <div className="container" style={{ padding: 'clamp(1.5rem, 3.5vw, 3rem) var(--container-pad, 1.5rem)', minHeight: '85vh' }}>
       <div style={{ marginBottom: '2.5rem' }}>
         <span className="badge badge-purple" style={{ marginBottom: '0.6rem' }}>
           Document Intelligence
         </span>
-        <h1 style={{ fontSize: '2.4rem', marginBottom: '0.5rem', color: '#fff' }}>
+        <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.4rem)', marginBottom: '0.5rem', color: '#fff', lineHeight: 1.2 }}>
           Study Materials & Notes
         </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', maxWidth: '650px' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 'clamp(0.95rem, 2vw, 1.05rem)', maxWidth: '650px', lineHeight: 1.5 }}>
           Upload your lecture slides, syllabus PDFs, or revision notes. Ground Gemini AI explanations strictly within your course materials.
         </p>
       </div>
@@ -100,8 +100,8 @@ export default function StudyMaterials() {
             gap: '0.75rem'
           }}
         >
-          <AlertCircle size={20} />
-          <span>{error}</span>
+          <AlertCircle size={20} style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: '0.9rem' }}>{error}</span>
         </div>
       )}
 
@@ -113,37 +113,37 @@ export default function StudyMaterials() {
         style={{
           border: `2px dashed ${dragOver ? 'var(--brand-cyan)' : 'rgba(255, 255, 255, 0.15)'}`,
           borderRadius: '20px',
-          padding: '3.5rem 2rem',
+          padding: 'clamp(1.75rem, 4vw, 3.5rem) clamp(1rem, 3vw, 2rem)',
           textAlign: 'center',
           background: dragOver ? 'rgba(0, 242, 254, 0.05)' : 'rgba(15, 22, 36, 0.5)',
-          marginBottom: '3rem',
+          marginBottom: '2.5rem',
           transition: 'all 0.25s ease'
         }}
       >
         <div
           style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '18px',
+            width: '58px',
+            height: '58px',
+            borderRadius: '16px',
             background: 'var(--grad-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 1.25rem auto',
+            margin: '0 auto 1rem auto',
             color: '#030712'
           }}
         >
-          <Upload size={28} />
+          <Upload size={26} />
         </div>
 
-        <h3 style={{ fontSize: '1.3rem', color: '#fff', marginBottom: '0.5rem' }}>
+        <h3 style={{ fontSize: 'clamp(1.15rem, 3vw, 1.3rem)', color: '#fff', marginBottom: '0.5rem' }}>
           Drag & Drop your study file here
         </h3>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
           Supports PDF, TXT, and Markdown files up to 25MB.
         </p>
 
-        <label className="btn btn-primary" style={{ cursor: 'pointer', display: 'inline-flex' }}>
+        <label className="btn btn-primary" style={{ cursor: 'pointer', display: 'inline-flex', minHeight: '44px', alignItems: 'center' }}>
           <input
             type="file"
             accept=".pdf,.txt,.md"
@@ -151,65 +151,73 @@ export default function StudyMaterials() {
             disabled={uploading}
             style={{ display: 'none' }}
           />
-          <span>{uploading ? 'Processing File...' : 'Browse Computer'}</span>
+          <span>{uploading ? 'Processing File...' : 'Choose File / Browse'}</span>
         </label>
       </div>
 
       {/* Uploaded Documents List */}
       <div>
-        <h3 style={{ fontSize: '1.4rem', marginBottom: '1.25rem', color: '#fff' }}>
+        <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.4rem)', marginBottom: '1.25rem', color: '#fff' }}>
           Your Processed Course Documents
         </h3>
 
         {documents.length === 0 ? (
-          <div className="glass-card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <FileText size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-            <h4 style={{ fontSize: '1.1rem', color: '#e2e8f0', marginBottom: '0.4rem' }}>
+          <div className="glass-card" style={{ padding: 'clamp(2rem, 4vw, 3rem) 1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+            <FileText size={44} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+            <h4 style={{ fontSize: '1.05rem', color: '#e2e8f0', marginBottom: '0.4rem' }}>
               No study materials uploaded yet.
             </h4>
-            <p style={{ fontSize: '0.9rem' }}>
+            <p style={{ fontSize: '0.88rem' }}>
               Upload your notes or PDF above to study with grounded AI.
             </p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.25rem' }}>
             {documents.map((doc) => (
               <div
                 key={doc.id}
                 onClick={() => navigate(`/materials/${doc.id}`)}
                 className="glass-card"
                 style={{
-                  padding: '1.5rem',
+                  padding: 'clamp(1.1rem, 2.5vw, 1.5rem)',
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
-                  justifyContent: 'space-between'
+                  justifyContent: 'space-between',
+                  borderRadius: '16px'
                 }}
               >
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                     <div
                       style={{
-                        width: '44px',
-                        height: '44px',
+                        width: '42px',
+                        height: '42px',
                         borderRadius: '12px',
                         background: 'rgba(192, 132, 252, 0.1)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#c084fc'
+                        color: '#c084fc',
+                        flexShrink: 0
                       }}
                     >
-                      <FileText size={22} />
+                      <FileText size={20} />
                     </div>
                     <button
                       onClick={(e) => handleDelete(e, doc.id)}
                       title="Delete document"
+                      aria-label="Delete document"
                       style={{
                         color: 'var(--text-muted)',
-                        padding: '0.4rem',
+                        padding: '0.5rem',
                         borderRadius: '8px',
-                        background: 'rgba(255, 255, 255, 0.04)'
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        minWidth: '38px',
+                        minHeight: '38px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}
                       onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
@@ -218,7 +226,7 @@ export default function StudyMaterials() {
                     </button>
                   </div>
 
-                  <h4 style={{ fontSize: '1.1rem', color: '#f8fafc', marginBottom: '0.4rem', wordBreak: 'break-all' }}>
+                  <h4 style={{ fontSize: '1.05rem', color: '#f8fafc', marginBottom: '0.4rem', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                     {doc.file_name}
                   </h4>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
