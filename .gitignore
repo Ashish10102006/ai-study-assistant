@@ -1,3 +1,7 @@
+# ==============================================================================
+# AI STUDY ASSISTANT - GITIGNORE
+# ==============================================================================
+
 # Environment Variables & Secrets (CRITICAL)
 .env
 .env.*
@@ -6,14 +10,46 @@
 **/.env.*
 Backend/.env
 Frontend/.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.backup
+*.env.backup
+
+# Never ignore example templates
 !**/.env.example
 
-# Local SQLite / Databases
+# Private Keys, Certificates, & Credentials
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+id_rsa*
+id_ecdsa*
+id_ed25519*
+credentials.json
+service_account*.json
+client_secret*.json
+
+# Local SQLite & Database files
 *.db
 *.sqlite
 *.sqlite3
 Backend/*.db
 Backend/study_assistant.db
+
+# Uploaded Files & Temporary Storage
+Backend/uploads/*
+!Backend/uploads/.gitkeep
+Backend/scratch_test.py
+scratch/
+*.scratch.*
 
 # Python
 __pycache__/
@@ -53,15 +89,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Uploaded Files & Temporary Storage
-Backend/uploads/*
-!Backend/uploads/.gitkeep
-Backend/scratch_test.py
-scratch/
-*.scratch.*
-
-# OS / Editor
+# OS & Editor
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+*.swp
+*.swo

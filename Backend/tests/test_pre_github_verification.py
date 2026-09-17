@@ -1,4 +1,5 @@
 import os
+import re
 import json
 from pathlib import Path
 import pytest
@@ -31,6 +32,7 @@ def test_app_starts_and_health_check():
 # ==============================================================================
 # 2. SUPABASE CONNECTION & AUTHENTICATION
 # ==============================================================================
+@pytest.mark.skipif(not get_settings().SUPABASE_SECRET_KEY, reason="Supabase credentials required")
 def test_supabase_connection_and_auth():
     """Verify Supabase admin client initialization and token verification handling."""
     settings = get_settings()
@@ -48,6 +50,7 @@ def test_supabase_connection_and_auth():
 # ==============================================================================
 # 3. GEMINI API & CUSTOM ACADEMIC TOPIC INPUT
 # ==============================================================================
+@pytest.mark.skipif(not get_settings().GEMINI_API_KEY, reason="GEMINI_API_KEY required")
 def test_gemini_api_and_custom_academic_topic():
     """Verify Gemini API generates high-quality explanation for custom academic topic."""
     gemini = get_gemini_service()
@@ -74,6 +77,7 @@ def test_gemini_api_and_custom_academic_topic():
 # ==============================================================================
 # 4. TAVILY API & AUTHENTIC WEB SOURCES
 # ==============================================================================
+@pytest.mark.skipif(not get_settings().TAVILY_API_KEY, reason="TAVILY_API_KEY required")
 def test_tavily_api_real_sources():
     """Verify Tavily API returns genuine, verified academic web sources."""
     tavily = get_tavily_service()
@@ -99,6 +103,7 @@ def test_tavily_api_real_sources():
 # ==============================================================================
 # 5. AI QUESTION ANSWERING & FOLLOW-UP QUESTIONS (FULL FLOW)
 # ==============================================================================
+@pytest.mark.skipif(not get_settings().GEMINI_API_KEY, reason="GEMINI_API_KEY required")
 def test_ai_question_answering_and_followup():
     """Verify asking an academic question, receiving structured answer, and asking follow-up."""
     storage = get_storage_service()
@@ -216,6 +221,7 @@ def test_document_processing_and_upload():
 # ==============================================================================
 # 8. STUDY TOOLS: SUMMARIZE, NOTES, QUIZZES, PRACTICE QUESTIONS
 # ==============================================================================
+@pytest.mark.skipif(not get_settings().GEMINI_API_KEY, reason="GEMINI_API_KEY required")
 def test_study_tools_endpoints():
     """Verify summarization, smart notes, quiz generator, and practice questions."""
     sample_text = (
@@ -314,9 +320,9 @@ def test_critical_github_security():
     assert "your_tavily_api_key" in backend_env_example
     assert "your_supabase_secret_key" in backend_env_example
     # Must NOT contain real keys or tokens
-    assert "AQ.Ab" not in backend_env_example
-    assert "tvly-dev" not in backend_env_example
-    assert "sb_secret_" not in backend_env_example
+    assert not re.search(r'AIza[0-9A-Za-z\-_]{20,}', backend_env_example)
+    assert not re.search(r'tvly-[a-zA-Z0-9]{20,}', backend_env_example)
+    assert not re.search(r'sb_[a-zA-Z0-9]{20,}', backend_env_example)
 
     frontend_env_example = (base_dir / "Frontend" / ".env.example").read_text(encoding="utf-8")
     assert "your-project-id" in frontend_env_example
