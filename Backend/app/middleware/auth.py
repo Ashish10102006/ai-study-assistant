@@ -1,15 +1,18 @@
+import re
 from typing import Optional, Dict, Any
 from fastapi import Header, HTTPException, status
 from app.services.supabase_client import verify_user_token
 
 
 async def get_current_user(
-    authorization: Optional[str] = Header(None)
+    authorization: Optional[str] = Header(None),
+    x_guest_id: Optional[str] = Header(None)
 ) -> Dict[str, Any]:
     """
     Extracts user information from Supabase Bearer token if present.
-    If no token is provided, returns a guest student context to allow exploring
-    study tools and 3D features immediately.
+    If no token is provided, returns an isolated guest student profile
+    keyed to their unique browser/device ID (x_guest_id) so multiple
+    visitors do not see each other's uploaded materials or chats.
     """
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split(" ")[1].strip()
@@ -17,10 +20,16 @@ async def get_current_user(
         if user:
             return user
 
-    # Default Guest Scholar profile for public study queries
+    # Sanitize and validate client guest ID
+    guest_id = "guest_default"
+    if x_guest_id and isinstance(x_guest_id, str):
+        cleaned = re.sub(r'[^a-zA-Z0-9_-]', '', x_guest_id.strip())[:64]
+        if cleaned:
+            guest_id = cleaned if cleaned.startswith("guest_") else f"guest_{cleaned}"
+
     return {
-        "id": "student_guest_default",
-        "email": "student@studyassistant.ai",
+        "id": guest_id,
+        "email": f"{guest_id}@guest.studyassistant.ai",
         "is_guest": True,
         "user_metadata": {"full_name": "Scholar Guest"}
     }

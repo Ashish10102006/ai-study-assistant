@@ -19,17 +19,35 @@ function getApiBaseUrl() {
 
 const API_BASE_URL = getApiBaseUrl();
 
+export function getGuestId() {
+  if (typeof window === 'undefined') return 'guest_default';
+  let guestId = localStorage.getItem('study_guest_id');
+  if (!guestId) {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      guestId = 'guest_' + crypto.randomUUID();
+    } else {
+      guestId = 'guest_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 12);
+    }
+    localStorage.setItem('study_guest_id', guestId);
+  }
+  return guestId;
+}
+
 async function getAuthHeader() {
-  if (!supabase) return {};
+  const headers = {
+    'X-Guest-Id': getGuestId()
+  };
+
+  if (!supabase) return headers;
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.access_token) {
-      return { Authorization: `Bearer ${session.access_token}` };
+      headers['Authorization'] = `Bearer ${session.access_token}`;
     }
   } catch (err) {
     console.warn('Could not fetch auth token:', err);
   }
-  return {};
+  return headers;
 }
 
 function formatNetworkError(err) {
