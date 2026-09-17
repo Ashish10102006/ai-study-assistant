@@ -77,7 +77,10 @@ export default function ConversationView() {
         source_metadata: {
           sources: res.sources || [],
           web_search_used: res.web_search_used,
-          document_used: res.document_used
+          document_used: res.document_used,
+          rag_mode: res.rag_mode || 'adaptive',
+          citations: res.citations || [],
+          routing: res.routing_decision
         },
         created_at: new Date().toISOString()
       };
@@ -176,10 +179,22 @@ export default function ConversationView() {
                   }}
                 >
                   {!isUser && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', paddingBottom: '0.45rem', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--brand-cyan)' }}>
-                        AI STUDY ASSISTANT
-                      </span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', paddingBottom: '0.45rem', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', flexWrap: 'wrap', gap: '0.4rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--brand-cyan)' }}>
+                          AI STUDY ASSISTANT
+                        </span>
+                        {meta.document_used && (
+                          <span style={{ color: '#c084fc', background: 'rgba(192, 132, 252, 0.12)', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                            Adaptive RAG
+                          </span>
+                        )}
+                        {meta.web_search_used && (
+                          <span style={{ color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                            Web Grounded
+                          </span>
+                        )}
+                      </div>
                       <button
                         onClick={() => copyText(m.content, m.id)}
                         style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', minHeight: '36px', padding: '0 0.4rem' }}
@@ -195,7 +210,36 @@ export default function ConversationView() {
                       {m.content}
                     </div>
                   ) : (
-                    <MarkdownRenderer content={m.content} />
+                    <>
+                      <MarkdownRenderer content={m.content} />
+                      {meta.citations && meta.citations.length > 0 && (
+                        <div style={{ marginTop: '0.85rem', paddingTop: '0.65rem', borderTop: '1px dashed rgba(255, 255, 255, 0.1)' }}>
+                          <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+                            GROUNDED CITATIONS (HYBRID RAG + RERANKED):
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                            {meta.citations.map((cit, idx) => (
+                              <span
+                                key={idx}
+                                style={{
+                                  fontSize: '0.74rem',
+                                  padding: '0.2rem 0.5rem',
+                                  borderRadius: '6px',
+                                  background: 'rgba(192, 132, 252, 0.12)',
+                                  border: '1px solid rgba(192, 132, 252, 0.25)',
+                                  color: '#e9d5ff',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem'
+                                }}
+                              >
+                                📄 {cit.file_name || 'Document'}{cit.page ? ` • Page ${cit.page}` : ''}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {sources.length > 0 && (

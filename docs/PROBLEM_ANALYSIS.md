@@ -127,8 +127,8 @@ quadrantChart
 | **Cognitive Question Answering** | **IMPLEMENTED** | Multi-mode (simple, detailed, step-by-step, examples, revision, exam) |
 | **Real-time Web Search Grounding** | **IMPLEMENTED** | Powered by Tavily SDK with live domain & snippet parsing |
 | **PDF/Document Text Extraction** | **IMPLEMENTED** | Powered by `pypdf` with size and extension validation |
-| **Lexical Document Chunk Retrieval** | **IMPLEMENTED** | Overlapping window chunking (1000 chars / 150 overlap) |
-| **Semantic Vector Embedding RAG** | **NOT IMPLEMENTED** | Currently uses lexical index retrieval; pgvector recommended |
+| **Structure-Aware Document Chunking** | **IMPLEMENTED** | Overlapping window chunking (1000 chars / 150 overlap) with section and page detection |
+| **Adaptive RAG + Hybrid Retrieval (Vector + FTS)** | **IMPLEMENTED** | Dense 768-dim embeddings (`text-embedding-004` / pgvector) + keyword search + RRF + Contextual Reranking |
 | **Quiz Arena & Auto-Grading** | **IMPLEMENTED** | Interactive MCQ state with explanations & confetti |
 | **Structured Notes Generator** | **IMPLEMENTED** | Markdown notes with high-yield exam checklists |
 | **Practice Problem Sets with Hints** | **IMPLEMENTED** | Progressive hints and model solution disclosure |

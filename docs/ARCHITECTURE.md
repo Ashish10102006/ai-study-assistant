@@ -25,7 +25,7 @@ graph TD
 | **C. Traditional Vector RAG** | Document chunking $\rightarrow$ embeddings $\rightarrow$ vector index (HNSW/IVF) | Excellent retrieval on uploaded textbooks | Blind to external web knowledge; requires embedding infra & vector DB | Moderate | High | Moderate | **Partially Suitable** (Lacks web grounding) |
 | **D. Agentic RAG** | ReAct loop: plan $\rightarrow$ search $\rightarrow$ grade chunk $\rightarrow$ rewrite query | High retrieval precision; self-correcting | High latency (5s–15s); recursive API cost; loop instability | High | Moderate | High | **Future Milestone** (Too slow for instant mobile study) |
 | **E. LLM + Web Search** | Query rewrite $\rightarrow$ Tavily/Bing $\rightarrow$ synthesis with live links | Up-to-date documentation; verified URLs | Cannot answer from student's proprietary lecture notes or PDFs | Moderate | High | Moderate | **Incomplete** (Ignored course PDF materials) |
-| **F. Hybrid RAG + Search (*Current*)** | Dual context ingestion: User PDF chunks + Tavily live web + Multi-mode prompt | Grounded on student notes AND verified live web; dual persistence resilience | Chunk retrieval currently lexical windowing rather than dense vector | Moderate | High | Moderate | **Optimal Sweet Spot** (Solves all academic needs) |
+| **F. Adaptive RAG + Hybrid Search (*Current*)** | Adaptive intent router + Dual-track Hybrid Retrieval (Dense Vector + Keyword FTS) + RRF + Reranking + Tavily live web | Grounded on student notes with pinpoint citations AND verified live web; dual persistence resilience | Requires embedding calculation during upload | Moderate | High | Moderate | **Optimal Sweet Spot** (Solves all academic needs) |
 | **G. Multi-Agent Swarm** | Autonomous agents (Researcher, Critic, Examiner, Formatter) | Distributed specialization | Excessive latency (10s–30s); token explosion; debugging nightmare | Very High | Low | Very High | **Unsuitable for MVP/Base** (Over-engineered) |
 | **H. Cloud-Native Managed** | AWS Bedrock / Google Vertex AI Agents | Fully managed scaling; enterprise SLA | Vendor lock-in; inflexible local development; high operational floor cost | Moderate | Very High | High | **Future Enterprise Milestone** |
 
@@ -174,16 +174,20 @@ sequenceDiagram
 ```
 
 ### Precise Implementation Clarifications (No False Claims)
-- **Document Retrieval Mechanism**:
-  - The document ingestion pipeline extracts raw text from PDFs and stores them as chunk records with `chunk_index` in `document_chunks`.
-  - The current retrieval method fetches the first $N$ sequential chunks (`chunk_index ASC LIMIT ?`).
-  - **Explicit Technical Note**: This is a *lexical windowing retrieval pipeline* (Partial RAG). It does **NOT** yet compute vector embeddings or perform dense approximate nearest-neighbor (ANN) cosine similarity search.
+- **Document Retrieval Mechanism (Adaptive RAG)**:
+  - The document ingestion pipeline extracts structured text from PDFs, TXT, MD, and DOCX files.
+  - Generates 768-dimensional dense vector embeddings via Google's `text-embedding-004` model (with unit-norm deterministic fallback).
+  - Stores chunks with vector embeddings in `document_chunks` table (Supabase `pgvector` with HNSW index / SQLite fallback).
+  - Implements **Dual-Track Hybrid Retrieval**: Runs dense semantic cosine similarity search alongside sparse keyword / full-text search.
+  - Combines ranked results using **Reciprocal Rank Fusion (RRF, $k=60$)**.
+  - Reranks top candidates via **Contextual Reranking** evaluating term density, exact phrase matching, and section heading alignment.
+  - Formulates structured citations with page numbers and section titles before injecting top-K passages into Gemini.
 - **Web Search Mechanism**:
-  - Uses the official Tavily SDK to perform semantic search queries.
+  - Uses the official Tavily SDK to perform semantic search queries when the Adaptive Router detects temporal, live, or external query requirements.
   - Returned sources contain verified domains, live URLs, and real snippet summaries. Zero fabricated citations.
 - **Cognitive Model Fallback**:
-  - Primary model: `gemini-2.5-flash` / `gemini-3.6-flash`.
-  - Fallback sequence: Automatically cascades to `gemini-1.5-flash` or `gemini-1.5-pro` if rate-limited or unavailable.
+  - Primary model: `gemini-3.5-flash-lite` / `gemini-3.6-flash`.
+  - Fallback sequence: Automatically cascades to `gemini-flash-lite-latest`, `gemini-3-flash-preview`, `gemini-3.8-flash` if rate-limited or unavailable.
 
 ---
 

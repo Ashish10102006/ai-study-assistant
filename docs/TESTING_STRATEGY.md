@@ -50,31 +50,39 @@ Command executed: `python -m pytest Backend/tests/ -v`
 
 | Test File | Test Case Name | Category | Status | Details / Assertion Target |
 | :--- | :--- | :--- | :--- | :--- |
+| `test_adaptive_rag.py` | `test_adaptive_router_document_rag` | Unit / Router | **PASSED** | Verifies query routing to Document RAG. |
+| `test_adaptive_rag.py` | `test_adaptive_router_web_search` | Unit / Router | **PASSED** | Verifies query routing to Tavily Web Search. |
+| `test_adaptive_rag.py` | `test_adaptive_router_general_academic` | Unit / Router | **PASSED** | Verifies query routing to Direct Gemini Inference. |
+| `test_adaptive_rag.py` | `test_adaptive_router_hybrid_doc_and_web` | Unit / Router | **PASSED** | Verifies query routing to Hybrid Doc + Web pathway. |
+| `test_adaptive_rag.py` | `test_embedding_service_dimensions_and_math` | Unit / Embeddings | **PASSED** | Verifies 768-dim vector embedding and cosine similarity math. |
+| `test_adaptive_rag.py` | `test_structure_aware_chunking_and_metadata` | Unit / Document | **PASSED** | Verifies heading/section detection and page preservation. |
+| `test_adaptive_rag.py` | `test_reciprocal_rank_fusion_logic` | Unit / RRF | **PASSED** | Verifies RRF ranking fusion formula and deduplication. |
+| `test_adaptive_rag.py` | `test_contextual_reranker_selection_and_citations` | Unit / Reranker | **PASSED** | Verifies candidate scoring, top-K selection, and citations. |
+| `test_adaptive_rag.py` | `test_tenant_isolation_in_retrieval` | Security / Isolation | **PASSED** | Verifies user B cannot retrieve user A's document chunks. |
+| `test_adaptive_rag.py` | `test_api_adaptive_rag_endpoints` | Integration | **PASSED** | Verifies `/api/ask` returns `rag_mode="adaptive"`. |
 | `test_ai.py` | `test_gemini_service_initialization` | Unit | **PASSED** | Verifies Gemini service initializes with correct model and settings. |
 | `test_ai.py` | `test_gemini_prompt_formatting` | Unit | **PASSED** | Verifies prompt construction across all 6 explanation modes. |
 | `test_api.py` | `test_root_endpoint` | Integration | **PASSED** | Verifies `GET /` returns platform metadata, version, and status. |
 | `test_api.py` | `test_health_endpoint` | Integration | **PASSED** | Verifies `GET /api/health` returns healthy diagnostics and safe status. |
 | `test_api.py` | `test_conversations_flow` | Integration | **PASSED** | Verifies conversation creation, listing, retrieval, and message append. |
-| `test_documents.py` | `test_document_validation` | Unit / Security | **PASSED** | Verifies extension whitelisting and 15MB file size boundary checks. |
-| `test_documents.py` | `test_document_chunking` | Unit | **PASSED** | Verifies sliding window chunking (1200 char window, 200 char overlap). |
+| `test_api.py` | `test_profile_creation_and_retrieval` | Integration | **PASSED** | Verifies guest and user profile creation. |
+| `test_api.py` | `test_storage_profile_with_google_metadata` | Integration | **PASSED** | Verifies Google profile metadata persistence. |
+| `test_documents.py` | `test_document_validation` | Unit / Security | **PASSED** | Verifies extension whitelisting and 25MB file size boundary checks. |
+| `test_documents.py` | `test_document_chunking` | Unit | **PASSED** | Verifies structure-aware sliding window chunking. |
 | `test_pre_github_verification.py` | `test_app_starts_and_health_check` | Smoke / Health | **PASSED** | Verifies application boot, middleware loading, and upload readiness. |
-| `test_pre_github_verification.py` | `test_supabase_connection_and_auth` | Integration | *SKIPPED* | Requires live `SUPABASE_SECRET_KEY` in environment. |
-| `test_pre_github_verification.py` | `test_gemini_api_and_custom_academic_topic` | Live AI | *SKIPPED* | Requires live `GEMINI_API_KEY` in environment. |
-| `test_pre_github_verification.py` | `test_tavily_api_real_sources` | Live Search | *SKIPPED* | Requires live `TAVILY_API_KEY` in environment. |
-| `test_pre_github_verification.py` | `test_ai_question_answering_and_followup` | Live AI Flow | *SKIPPED* | Requires live Gemini and Tavily credentials. |
 | `test_pre_github_verification.py` | `test_conversation_lifecycle` | Integration | **PASSED** | Verifies full CRUD conversation lifecycle in local storage. |
 | `test_pre_github_verification.py` | `test_document_processing_and_upload` | Integration | **PASSED** | Verifies multipart upload, file write, extraction, and chunk DB persistence. |
-| `test_pre_github_verification.py` | `test_study_tools_endpoints` | Live AI Tools | *SKIPPED* | Requires live `GEMINI_API_KEY` for quiz/notes/summary generation. |
 | `test_pre_github_verification.py` | `test_user_data_isolation` | Security | **PASSED** | Verifies strict tenant isolation: user B cannot access user A's conversations. |
 | `test_pre_github_verification.py` | `test_critical_github_security` | Security Audit | **PASSED** | Verifies `.env` is excluded from git, `.gitignore` protects secrets, `.env.example` exists. |
-| `test_search.py` | `test_tavily_service_heuristic` | Unit | **PASSED** | Verifies decision heuristics for when web search is needed vs bypassed. |
+| `test_pre_github_verification.py` | Cloud credentials tests (5 cases) | Live Cloud | *SKIPPED* | Optional cloud API keys for live cloud integration. |
+| `test_search.py` | `test_tavily_service_heuristic` | Unit / Search | **PASSED** | Verifies search trigger decision heuristics for web queries. |
 
 **Summary Statistics**:
-- **Total Tests Collected**: 18
-- **Passed**: 13 (100% of offline/unit/security/mockable tests)
-- **Skipped**: 5 (cleanly skipped due to unpopulated API keys in local development environment; fully functional when keys provided)
-- **Failed**: 0
-- **Execution Time**: 2.83 seconds
+- **Total Tests Collected**: 30
+- **Passed**: 25 (20 unit/RAG + 5 integration/security)
+- **Skipped**: 5 (cleanly skipped when upstream cloud credentials are not populated)
+- **Failed**: 0 (100% pass rate)
+- **Execution Time**: ~1.3 seconds
 
 ---
 
