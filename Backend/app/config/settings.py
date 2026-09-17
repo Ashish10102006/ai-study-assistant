@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from functools import lru_cache
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
 import tempfile
@@ -42,9 +42,7 @@ class Settings(BaseSettings):
         "gemini-3.8-flash"
     ]
 
-    class Config:
-        case_sensitive = True
-        extra = "ignore"
+    model_config = SettingsConfigDict(case_sensitive=True, extra="ignore")
 
     def get_safe_status(self) -> dict:
         """Returns safe configuration diagnostics without revealing any secret values."""
