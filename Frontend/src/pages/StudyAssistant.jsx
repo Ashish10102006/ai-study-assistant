@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import SourceBadge from '../components/SourceBadge';
 import Loading3D from '../components/3d/Loading3D';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 import {
   Sparkles,
   Send,
@@ -480,10 +481,14 @@ export default function StudyAssistant() {
                         </div>
                       )}
 
-                      {/* Content with pre-wrap */}
-                      <div style={{ whiteSpace: 'pre-wrap' }}>
-                        {m.content}
-                      </div>
+                      {/* Render formatted Markdown for AI and clean text for User */}
+                      {isUser ? (
+                        <div style={{ whiteSpace: 'pre-wrap' }}>
+                          {m.content}
+                        </div>
+                      ) : (
+                        <MarkdownRenderer content={m.content} />
+                      )}
                     </div>
                   </div>
                 );

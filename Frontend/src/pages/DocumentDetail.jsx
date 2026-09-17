@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import Loading3D from '../components/3d/Loading3D';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 import {
   FileText,
   Sparkles,
@@ -210,8 +211,8 @@ export default function DocumentDetail() {
                 <span>{copied ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
-            <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.65', color: '#f8fafc', fontSize: '0.95rem' }}>
-              {docAnswer}
+            <div>
+              <MarkdownRenderer content={docAnswer} />
             </div>
           </div>
         )}

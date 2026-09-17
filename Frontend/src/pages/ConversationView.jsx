@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import SourceBadge from '../components/SourceBadge';
 import Loading3D from '../components/3d/Loading3D';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 import {
   ArrowLeft,
   Send,
@@ -187,9 +188,13 @@ export default function ConversationView() {
                     </div>
                   )}
 
-                  <div style={{ whiteSpace: 'pre-wrap' }}>
-                    {m.content}
-                  </div>
+                  {isUser ? (
+                    <div style={{ whiteSpace: 'pre-wrap' }}>
+                      {m.content}
+                    </div>
+                  ) : (
+                    <MarkdownRenderer content={m.content} />
+                  )}
 
                   {sources.length > 0 && (
                     <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
