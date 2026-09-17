@@ -1,3 +1,12 @@
+import sys
+import os
+from pathlib import Path
+
+# Ensure root of backend directory is in sys.path for serverless runtimes
+BASE_DIR = Path(__file__).resolve().parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 import logging
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
