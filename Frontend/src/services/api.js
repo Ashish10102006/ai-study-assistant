@@ -15,6 +15,25 @@ async function getAuthHeader() {
   return {};
 }
 
+function formatNetworkError(err) {
+  const isLocalHostTarget = !API_BASE_URL || API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1');
+  const isDeployedClient = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+
+  if (isDeployedClient && isLocalHostTarget) {
+    return new Error(
+      `Cannot connect to backend: The frontend is deployed on ${window.location.hostname}, but is configured to connect to "${API_BASE_URL || 'http://localhost:8000'}". Please deploy your backend service (e.g. on Render or Railway) and set VITE_API_URL in your Vercel project environment variables.`
+    );
+  }
+
+  if (err instanceof TypeError && err.message.toLowerCase().includes('fetch')) {
+    return new Error(
+      `Failed to connect to backend server at ${API_BASE_URL || 'http://localhost:8000'}. Please ensure the backend server is running and accessible.`
+    );
+  }
+
+  return err;
+}
+
 export const api = {
   async get(endpoint, params = {}) {
     const url = new URL(`${API_BASE_URL}${endpoint}`, window.location.origin);
@@ -29,7 +48,13 @@ export const api = {
       ...(await getAuthHeader()),
     };
 
-    const res = await fetch(url.toString(), { method: 'GET', headers });
+    let res;
+    try {
+      res = await fetch(url.toString(), { method: 'GET', headers });
+    } catch (err) {
+      throw formatNetworkError(err);
+    }
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
       throw new Error(err.detail || 'Request failed');
@@ -43,11 +68,16 @@ export const api = {
       ...(await getAuthHeader()),
     };
 
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-    });
+    let res;
+    try {
+      res = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+    } catch (err) {
+      throw formatNetworkError(err);
+    }
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
@@ -62,11 +92,16 @@ export const api = {
       ...(await getAuthHeader()),
     };
 
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(body),
-    });
+    let res;
+    try {
+      res = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(body),
+      });
+    } catch (err) {
+      throw formatNetworkError(err);
+    }
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
@@ -81,10 +116,15 @@ export const api = {
       ...(await getAuthHeader()),
     };
 
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'DELETE',
-      headers,
-    });
+    let res;
+    try {
+      res = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'DELETE',
+        headers,
+      });
+    } catch (err) {
+      throw formatNetworkError(err);
+    }
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
@@ -95,13 +135,18 @@ export const api = {
 
   async upload(endpoint, formData) {
     const authHeaders = await getAuthHeader();
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        ...authHeaders,
-      },
-      body: formData,
-    });
+    let res;
+    try {
+      res = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          ...authHeaders,
+        },
+        body: formData,
+      });
+    } catch (err) {
+      throw formatNetworkError(err);
+    }
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));

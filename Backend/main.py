@@ -28,7 +28,8 @@ origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
-    "http://localhost:8000"
+    "http://localhost:8000",
+    "https://ai-study-assistant-five-tau.vercel.app",
 ]
 if settings.APP_URL and settings.APP_URL not in origins:
     origins.append(settings.APP_URL)
@@ -40,6 +41,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def handle_private_network_access(request: Request, call_next):
+    response = await call_next(request)
+    if request.headers.get("access-control-request-private-network") == "true":
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
 
 # Mount Uploads Directory
 if settings.UPLOAD_DIR.exists():
