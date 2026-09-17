@@ -10,7 +10,7 @@ if str(BASE_DIR) not in sys.path:
 import logging
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from app.config.settings import get_settings
 from app.routes.api import router as api_router
@@ -65,6 +65,11 @@ if settings.UPLOAD_DIR.exists():
 
 # Include API Router
 app.include_router(api_router)
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return Response(status_code=204)
 
 
 @app.get("/")
