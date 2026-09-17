@@ -17,7 +17,7 @@ function getApiBaseUrl() {
   return envUrl || (isLocalHost ? 'http://localhost:8000' : PROD_API_URL);
 }
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = getApiBaseUrl().replace(/\/+$/, '');
 
 export function getGuestId() {
   if (typeof window === 'undefined') return 'guest_default';
