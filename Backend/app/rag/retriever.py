@@ -131,17 +131,21 @@ class HybridRetriever:
         chunk_map: Dict[str, Dict[str, Any]] = {}
         dense_ranks: Dict[str, int] = {}
         keyword_ranks: Dict[str, int] = {}
+        dense_scores: Dict[str, float] = {}
+        keyword_scores: Dict[str, float] = {}
 
         for rank, (chunk, score) in enumerate(dense_results):
             cid = chunk["id"]
             chunk_map[cid] = chunk
             dense_ranks[cid] = rank + 1
+            dense_scores[cid] = float(score)
             rrf_scores[cid] = rrf_scores.get(cid, 0.0) + (1.0 / (self.rrf_k + rank + 1))
 
         for rank, (chunk, score) in enumerate(keyword_results):
             cid = chunk["id"]
             chunk_map[cid] = chunk
             keyword_ranks[cid] = rank + 1
+            keyword_scores[cid] = float(score)
             rrf_scores[cid] = rrf_scores.get(cid, 0.0) + (1.0 / (self.rrf_k + rank + 1))
 
         sorted_cids = sorted(rrf_scores.keys(), key=lambda cid: rrf_scores[cid], reverse=True)
@@ -152,6 +156,8 @@ class HybridRetriever:
             c["rrf_score"] = round(rrf_scores[cid], 5)
             c["dense_rank"] = dense_ranks.get(cid)
             c["keyword_rank"] = keyword_ranks.get(cid)
+            c["dense_score"] = round(dense_scores.get(cid, 0.0), 4)
+            c["keyword_score"] = round(keyword_scores.get(cid, 0.0), 4)
             fused.append(c)
 
         return fused

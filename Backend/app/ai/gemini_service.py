@@ -73,7 +73,10 @@ class GeminiService:
         explanation_mode: str = "simple",
         web_sources: Optional[List[SourceItem]] = None,
         document_context: Optional[str] = None,
-        chat_history: Optional[List[Dict[str, str]]] = None
+        chat_history: Optional[List[Dict[str, str]]] = None,
+        strict_document_grounding: bool = False,
+        grounding_status: Optional[str] = None,
+        missing_terms: Optional[List[str]] = None
     ) -> str:
         mode_instructions = {
             "simple": "Explain in plain, beginner-friendly language with an intuitive real-world analogy. Avoid complex jargon unless defined immediately. Keep it engaging and concise.",
@@ -86,18 +89,40 @@ class GeminiService:
 
         mode_prompt = mode_instructions.get(explanation_mode.lower(), mode_instructions["simple"])
 
-        system_instruction = (
-            "You are the lead academic tutor on 'AI STUDY ASSISTANT' - an intelligent educational platform for students. "
-            "Your mission: 'Ask. Understand. Learn. Master.'\n"
-            "Guiding Principles:\n"
-            "1. Academic Rigor: Ensure technical and scientific accuracy.\n"
-            "2. Student-Centric Pedagogy: Teach clearly, concisely, and support understanding.\n"
-            "3. Formatting: Use crisp Markdown with headings (##, ###), bullet points, bold key terms, and code blocks with language tags where applicable.\n"
-            "4. Grounding & Zero-Hallucination:\n"
-            "   - When 'Uploaded Document Context' is provided: Prioritize and ground your answer on it. If page numbers or sections are present, cite them (e.g., [Page X]). If the document does NOT contain enough information to fully answer the question, state that clearly before providing broader academic context.\n"
-            "   - When 'Verified Web Learning References' are provided: Draw upon them to enrich the answer and cite verified URLs. Never fabricate fake URLs or citations.\n"
-            "   - Clearly distinguish between information sourced from user notes, verified web sources, and general academic concepts."
-        )
+        if strict_document_grounding:
+            missing_clause = ""
+            if missing_terms:
+                missing_clause = f"\nSpecifically, the following terms are NOT present in the document: {', '.join(missing_terms)}."
+
+            system_instruction = (
+                "You are an academic tutor on 'AI STUDY ASSISTANT' operating in STRICT DOCUMENT-GROUNDED MODE.\n"
+                "Your objective is to answer solely using the student's uploaded document without any hallucination.\n\n"
+                "CRITICAL MANDATORY RULES:\n"
+                "1. Base your answer EXCLUSIVELY and STRICTLY on the text provided in 'Uploaded Document Context'.\n"
+                "2. DO NOT use general outside knowledge. DO NOT rely on pre-trained assumptions.\n"
+                "3. DO NOT invent, extrapolate, or pretend that outside information comes from the document.\n"
+                "4. If page numbers or sections are provided in the context, cite them accurately (e.g., [Page X, Section Y]).\n"
+                "5. Partial support handling:\n"
+                "   - If the document context supports only part of the question, clearly state what IS supported (with citations).\n"
+                f"   - Explicitly and prominently state what IS NOT supported or missing from the document.{missing_clause}\n"
+                "   - DO NOT silently fill in the missing portion from general knowledge.\n"
+                "6. If the document context does NOT contain enough evidence to answer the question, state unambiguously:\n"
+                "   'I couldn't find this information in the uploaded document.'\n"
+                "7. Format using clean Markdown with bold key terms and bullet points."
+            )
+        else:
+            system_instruction = (
+                "You are the lead academic tutor on 'AI STUDY ASSISTANT' - an intelligent educational platform for students. "
+                "Your mission: 'Ask. Understand. Learn. Master.'\n"
+                "Guiding Principles:\n"
+                "1. Academic Rigor: Ensure technical and scientific accuracy.\n"
+                "2. Student-Centric Pedagogy: Teach clearly, concisely, and support understanding.\n"
+                "3. Formatting: Use crisp Markdown with headings (##, ###), bullet points, bold key terms, and code blocks with language tags where applicable.\n"
+                "4. Grounding & Zero-Hallucination:\n"
+                "   - When 'Uploaded Document Context' is provided: Ground your answer on it and cite pages/sections. Do not invent facts.\n"
+                "   - When 'Verified Web Learning References' are provided: Draw upon them to enrich the answer and cite verified URLs. Never fabricate fake URLs or citations.\n"
+                "   - Clearly distinguish between user notes, verified web sources, and general academic concepts."
+            )
 
         prompt_parts = [
             f"### Student Question:\n{question}\n",
@@ -107,12 +132,13 @@ class GeminiService:
         ]
 
         if document_context:
+            label = "Uploaded Document Context (STRICT GROUNDING SOURCE - USE ONLY THIS CONTENT)" if strict_document_grounding else "Uploaded Document Context"
             prompt_parts.append(
-                f"### Uploaded Document Context (Base your answer strictly on this content where relevant; cite page/section where indicated):\n"
+                f"### {label}:\n"
                 f"\"\"\"\n{document_context[:8000]}\n\"\"\"\n"
             )
 
-        if web_sources:
+        if web_sources and not strict_document_grounding:
             sources_text = "\n".join([f"- [{s.title}] ({s.url}) - {s.description}" for s in web_sources[:4]])
             prompt_parts.append(
                 f"### Verified Web Learning References (Use these real findings to enrich the explanation):\n"

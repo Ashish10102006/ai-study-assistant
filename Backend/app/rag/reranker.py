@@ -27,7 +27,9 @@ class ContextualReranker:
         if not candidates:
             return [], []
 
-        query_terms = [t.lower() for t in re.findall(r"[a-zA-Z0-9_\-\+]{2,}", query)]
+        from app.rag.grounding import GroundingEvaluator
+        substantive_terms = GroundingEvaluator.extract_substantive_terms(query)
+        clean_query = query.strip().lower()
         scored_candidates: List[Tuple[Dict[str, Any], float]] = []
 
         for candidate in candidates:
@@ -42,25 +44,37 @@ class ContextualReranker:
 
             section = str(metadata.get("section", "")).lower()
 
-            # 1. Term Coverage Score
-            matched_terms = sum(1 for term in query_terms if term in content)
-            coverage = (matched_terms / max(1, len(query_terms)))
+            # 1. Substantive Term Coverage Score (Ignores filler and stop words)
+            if substantive_terms:
+                matched_substantive = sum(1 for term in substantive_terms if term in content)
+                coverage = (matched_substantive / len(substantive_terms))
+            else:
+                coverage = 0.5
 
             # 2. Section Heading Alignment
             section_bonus = 0.0
-            if section:
-                for term in query_terms:
+            if section and substantive_terms:
+                for term in substantive_terms:
                     if term in section:
                         section_bonus += 0.35
 
             # 3. Exact Substring Match Bonus
-            exact_bonus = 0.5 if query.lower() in content else 0.0
+            exact_bonus = 0.5 if clean_query in content else 0.0
 
-            # 4. Prior RRF Score
-            rrf_score = candidate.get("rrf_score", 0.0)
+            # 4. Dense Semantic Similarity Score
+            dense_score = float(candidate.get("dense_score", 0.0) or 0.0)
+            dense_bonus = max(0.0, min(1.0, (dense_score - 0.30) / 0.45)) * 0.40
+
+            # 5. Prior RRF Score
+            rrf_score = float(candidate.get("rrf_score", 0.0) or 0.0)
 
             # Combined Rerank Score
-            final_score = (coverage * 0.45) + section_bonus + exact_bonus + (rrf_score * 10.0)
+            final_score = (coverage * 0.45) + section_bonus + exact_bonus + dense_bonus + (rrf_score * 5.0)
+
+            # Attach computed scores onto candidate dictionary for downstream observability
+            candidate["rerank_score"] = round(final_score, 4)
+            candidate["substantive_coverage"] = round(coverage, 4)
+
             scored_candidates.append((candidate, final_score))
 
         # Sort descending by final rerank score
@@ -98,6 +112,12 @@ class ContextualReranker:
             })
 
         return selected_chunks, citations
+
+    @staticmethod
+    def evaluate_grounding(query: str, chunks: List[Dict[str, Any]], document_meta: Dict[str, Any] = None):
+        """Delegates grounding decision to GroundingEvaluator."""
+        from app.rag.grounding import GroundingEvaluator
+        return GroundingEvaluator.evaluate(query, chunks, document_meta)
 
     @staticmethod
     def build_context_block(chunks: List[Dict[str, Any]], filename: str = "Uploaded Document") -> str:

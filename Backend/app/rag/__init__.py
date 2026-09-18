@@ -9,6 +9,7 @@ from app.rag.router import AdaptiveRouter, QueryIntent, RoutingDecision, get_ada
 from app.rag.embeddings import EmbeddingService, get_embedding_service
 from app.rag.retriever import HybridRetriever, get_hybrid_retriever
 from app.rag.reranker import ContextualReranker, get_contextual_reranker
+from app.rag.grounding import GroundingStatus, GroundingDecision, GroundingEvaluator, get_grounding_evaluator
 
 __all__ = [
     "AdaptiveRouter",
@@ -21,4 +22,8 @@ __all__ = [
     "get_hybrid_retriever",
     "ContextualReranker",
     "get_contextual_reranker",
+    "GroundingStatus",
+    "GroundingDecision",
+    "GroundingEvaluator",
+    "get_grounding_evaluator",
 ]

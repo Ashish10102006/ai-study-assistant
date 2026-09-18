@@ -43,6 +43,10 @@ from app.rag import (
     get_hybrid_retriever,
     get_contextual_reranker,
     get_embedding_service,
+    get_grounding_evaluator,
+    QueryIntent,
+    GroundingStatus,
+    GroundingDecision,
     ContextualReranker
 )
 
@@ -122,6 +126,8 @@ async def ask_question(
     document_context = None
     document_used = False
     citations: List[CitationItem] = []
+    grounding_decision: Optional[GroundingDecision] = None
+    is_doc_grounded = bool(req.document_id) or (routing.intent == QueryIntent.DOCUMENT_RAG)
 
     target_doc_id = req.document_id
     if not target_doc_id and routing.use_document and user_docs:
@@ -141,6 +147,53 @@ async def ask_question(
                 candidates=candidates,
                 document_meta=doc
             )
+
+            evaluator = get_grounding_evaluator()
+            grounding_decision = evaluator.evaluate(
+                query=req.question,
+                candidates=top_chunks or candidates,
+                document_meta=doc
+            )
+
+            # CRITICAL RULE: If question is document-grounded and NOT supported by the document:
+            # DO NOT GENERATE FROM GENERAL KNOWLEDGE.
+            if is_doc_grounded and not routing.use_web and grounding_decision.status == GroundingStatus.NOT_SUPPORTED:
+                explanation = (
+                    f"I couldn't find this information in the uploaded document ('{doc.get('file_name', 'Document')}'). "
+                    "This question is not supported by the document's content."
+                )
+                routing_data = {**routing.model_dump(), "grounding_decision": grounding_decision.model_dump()}
+                assistant_msg = storage.add_message(
+                    conversation_id=conv_id,
+                    user_id=user_id,
+                    role="ASSISTANT",
+                    content=explanation,
+                    source_metadata={
+                        "sources": [],
+                        "web_search_used": False,
+                        "document_used": True,
+                        "rag_mode": "adaptive",
+                        "routing": routing_data,
+                        "citations": [],
+                        "explanation_mode": req.explanation_mode
+                    }
+                )
+                return AskResponse(
+                    answer=explanation,
+                    subject=active_subject,
+                    topic=active_topic,
+                    explanation_mode=req.explanation_mode,
+                    sources=[],
+                    web_search_used=False,
+                    document_used=True,
+                    rag_mode="adaptive",
+                    citations=[],
+                    routing_decision=routing_data,
+                    conversation_id=conv_id,
+                    message_id=assistant_msg["id"],
+                    warning=None
+                )
+
             if top_chunks:
                 document_context = ContextualReranker.build_context_block(
                     top_chunks,
@@ -149,7 +202,6 @@ async def ask_question(
                 document_used = True
                 citations = [CitationItem(**c) for c in raw_citations]
             else:
-                # Fallback to basic chunks if hybrid retriever produced zero matches
                 chunks = storage.get_document_chunks_for_context(target_doc_id, query=req.question, limit=5)
                 if chunks:
                     document_context = "\n---\n".join(chunks)
@@ -181,12 +233,19 @@ async def ask_question(
             topic=active_topic,
             explanation_mode=req.explanation_mode,
             web_sources=sources if web_search_used else None,
-            document_context=document_context
+            document_context=document_context,
+            strict_document_grounding=is_doc_grounded and not web_search_used,
+            grounding_status=grounding_decision.status if grounding_decision else None,
+            missing_terms=grounding_decision.missing_terms if grounding_decision else None
         )
     except Exception as e:
         logger.error(f"Gemini generation error: {e}")
         explanation = "AI service is temporarily unavailable. Please try again."
         warning_msg = f"AI service is temporarily unavailable: {str(e)[:160]}"
+
+    routing_data = routing.model_dump()
+    if grounding_decision:
+        routing_data["grounding_decision"] = grounding_decision.model_dump()
 
     # 6. Save assistant response with metadata
     assistant_msg = storage.add_message(
@@ -199,7 +258,7 @@ async def ask_question(
             "web_search_used": web_search_used,
             "document_used": document_used,
             "rag_mode": "adaptive",
-            "routing": routing.model_dump(),
+            "routing": routing_data,
             "citations": [c.model_dump() for c in citations],
             "explanation_mode": req.explanation_mode
         }
@@ -215,7 +274,7 @@ async def ask_question(
         document_used=document_used,
         rag_mode="adaptive",
         citations=citations,
-        routing_decision=routing.model_dump(),
+        routing_decision=routing_data,
         conversation_id=conv_id,
         message_id=assistant_msg["id"],
         warning=warning_msg
@@ -263,6 +322,8 @@ async def chat_continue(
     document_context = None
     document_used = False
     citations: List[CitationItem] = []
+    grounding_decision: Optional[GroundingDecision] = None
+    is_doc_grounded = bool(req.document_id) or (routing.intent == QueryIntent.DOCUMENT_RAG)
 
     target_doc_id = req.document_id
     if not target_doc_id and routing.use_document and user_docs:
@@ -282,6 +343,52 @@ async def chat_continue(
                 candidates=candidates,
                 document_meta=doc
             )
+
+            evaluator = get_grounding_evaluator()
+            grounding_decision = evaluator.evaluate(
+                query=req.message,
+                candidates=top_chunks or candidates,
+                document_meta=doc
+            )
+
+            # CRITICAL RULE: If question is document-grounded and NOT supported by the document:
+            # DO NOT GENERATE FROM GENERAL KNOWLEDGE.
+            if is_doc_grounded and not routing.use_web and grounding_decision.status == GroundingStatus.NOT_SUPPORTED:
+                explanation = (
+                    f"I couldn't find this information in the uploaded document ('{doc.get('file_name', 'Document')}'). "
+                    "This question is not supported by the document's content."
+                )
+                routing_data = {**routing.model_dump(), "grounding_decision": grounding_decision.model_dump()}
+                asst_msg = storage.add_message(
+                    conversation_id=req.conversation_id,
+                    user_id=user_id,
+                    role="ASSISTANT",
+                    content=explanation,
+                    source_metadata={
+                        "sources": [],
+                        "web_search_used": False,
+                        "document_used": True,
+                        "rag_mode": "adaptive",
+                        "routing": routing_data,
+                        "citations": []
+                    }
+                )
+                return AskResponse(
+                    answer=explanation,
+                    subject=active_subject,
+                    topic=active_topic,
+                    explanation_mode=req.explanation_mode,
+                    sources=[],
+                    web_search_used=False,
+                    document_used=True,
+                    rag_mode="adaptive",
+                    citations=[],
+                    routing_decision=routing_data,
+                    conversation_id=req.conversation_id,
+                    message_id=asst_msg["id"],
+                    warning=None
+                )
+
             if top_chunks:
                 document_context = ContextualReranker.build_context_block(
                     top_chunks,
@@ -319,12 +426,19 @@ async def chat_continue(
             explanation_mode=req.explanation_mode,
             web_sources=sources if web_search_used else None,
             document_context=document_context,
-            chat_history=messages_history
+            chat_history=messages_history,
+            strict_document_grounding=is_doc_grounded and not web_search_used,
+            grounding_status=grounding_decision.status if grounding_decision else None,
+            missing_terms=grounding_decision.missing_terms if grounding_decision else None
         )
     except Exception as e:
         logger.error(f"Gemini generation error in chat: {e}")
         explanation = "AI service is temporarily unavailable. Please try again."
         warning_msg = "AI service is temporarily unavailable."
+
+    routing_data = routing.model_dump()
+    if grounding_decision:
+        routing_data["grounding_decision"] = grounding_decision.model_dump()
 
     asst_msg = storage.add_message(
         conversation_id=req.conversation_id,
@@ -336,7 +450,7 @@ async def chat_continue(
             "web_search_used": web_search_used,
             "document_used": document_used,
             "rag_mode": "adaptive",
-            "routing": routing.model_dump(),
+            "routing": routing_data,
             "citations": [c.model_dump() for c in citations]
         }
     )
@@ -351,7 +465,7 @@ async def chat_continue(
         document_used=document_used,
         rag_mode="adaptive",
         citations=citations,
-        routing_decision=routing.model_dump(),
+        routing_decision=routing_data,
         conversation_id=req.conversation_id,
         message_id=asst_msg["id"],
         warning=warning_msg
@@ -609,8 +723,41 @@ async def ask_document(
         document_meta=doc
     )
 
+    # 3. Strict Grounding Decision
+    evaluator = get_grounding_evaluator()
+    grounding_decision = evaluator.evaluate(
+        query=req.question,
+        candidates=top_chunks or candidates,
+        document_meta=doc
+    )
+
+    # CRITICAL RULE: If question is NOT supported by the document:
+    # DO NOT GENERATE FROM GENERAL KNOWLEDGE.
+    if grounding_decision.status == GroundingStatus.NOT_SUPPORTED:
+        explanation = (
+            f"This question is not supported by the uploaded document ('{doc.get('file_name', 'Document')}'). "
+            "No relevant evidence was found matching your query in this document."
+        )
+        return AskResponse(
+            answer=explanation,
+            subject="Document Study",
+            topic=doc["file_name"],
+            explanation_mode=req.explanation_mode,
+            sources=[],
+            web_search_used=False,
+            document_used=True,
+            rag_mode="adaptive",
+            citations=[],
+            routing_decision={
+                "intent": "DOCUMENT_RAG",
+                "use_document": True,
+                "use_web": False,
+                "reasoning": "Document-grounded question evaluated as NOT_SUPPORTED by document content.",
+                "grounding_decision": grounding_decision.model_dump()
+            }
+        )
+
     if not top_chunks:
-        # Fallback to basic chunk context if hybrid retrieval yields empty
         chunks = storage.get_document_chunks_for_context(document_id, query=req.question, limit=6)
         if not chunks:
             raise HTTPException(status_code=400, detail="Document contains no readable text chunks.")
@@ -626,7 +773,10 @@ async def ask_document(
             subject="Document Study",
             topic=doc["file_name"],
             explanation_mode=req.explanation_mode,
-            document_context=doc_context
+            document_context=doc_context,
+            strict_document_grounding=True,
+            grounding_status=grounding_decision.status,
+            missing_terms=grounding_decision.missing_terms
         )
     except Exception as e:
         logger.error(f"Error answering from document: {e}")
@@ -646,7 +796,8 @@ async def ask_document(
             "intent": "DOCUMENT_RAG",
             "use_document": True,
             "use_web": False,
-            "reasoning": "Direct document ask executed via Hybrid Retrieval (Dense + Keyword FTS) + RRF + Contextual Reranking."
+            "reasoning": f"Direct document ask executed: {grounding_decision.status}.",
+            "grounding_decision": grounding_decision.model_dump()
         }
     )
 
@@ -664,6 +815,9 @@ async def study_summarize(
 
     text_to_summarize = req.text
     if req.document_id:
+        doc = storage.get_document(req.document_id, current_user["id"])
+        if not doc:
+            raise HTTPException(status_code=404, detail="Document not found or unauthorized.")
         chunks = storage.get_document_chunks_for_context(req.document_id, limit=8)
         if chunks:
             text_to_summarize = "\n".join(chunks)
@@ -690,6 +844,9 @@ async def study_notes(
     active_topic = req.custom_topic or req.topic
     doc_context = None
     if req.document_id:
+        doc = storage.get_document(req.document_id, current_user["id"])
+        if not doc:
+            raise HTTPException(status_code=404, detail="Document not found or unauthorized.")
         chunks = storage.get_document_chunks_for_context(req.document_id, limit=6)
         if chunks:
             doc_context = "\n".join(chunks)
@@ -713,6 +870,9 @@ async def study_quiz(
     active_topic = req.custom_topic or req.topic
     doc_context = None
     if req.document_id:
+        doc = storage.get_document(req.document_id, current_user["id"])
+        if not doc:
+            raise HTTPException(status_code=404, detail="Document not found or unauthorized.")
         chunks = storage.get_document_chunks_for_context(req.document_id, limit=6)
         if chunks:
             doc_context = "\n".join(chunks)
@@ -746,6 +906,9 @@ async def study_practice_questions(
     active_topic = req.custom_topic or req.topic
     doc_context = None
     if req.document_id:
+        doc = storage.get_document(req.document_id, current_user["id"])
+        if not doc:
+            raise HTTPException(status_code=404, detail="Document not found or unauthorized.")
         chunks = storage.get_document_chunks_for_context(req.document_id, limit=6)
         if chunks:
             doc_context = "\n".join(chunks)
