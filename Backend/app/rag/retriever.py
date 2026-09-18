@@ -162,6 +162,68 @@ class HybridRetriever:
 
         return fused
 
+    def retrieve_for_summary(
+        self,
+        document_id: str,
+        user_id: str,
+        max_chunks: int = 14
+    ) -> List[Dict[str, Any]]:
+        """
+        Retrieves representative chunks across the entire document sequentially for summarization.
+        Enforces strict tenant isolation.
+        Preserves natural reading order (chunk_index ASC) for coherent document overview synthesis.
+        """
+        # 1. Tenant Isolation: Verify document exists and belongs to this user
+        doc = self.storage.get_document(document_id, user_id)
+        if not doc:
+            logger.warning(f"Tenant isolation: Document {document_id} not found for user {user_id}")
+            return []
+
+        # 2. Retrieve all raw chunks for this document from storage
+        raw_chunks = self.storage.get_raw_chunks_with_embeddings(document_id)
+        if not raw_chunks:
+            return []
+
+        # 3. Filter to chunks with actual readable content
+        valid_chunks = [c for c in raw_chunks if c.get("content", "").strip()]
+        if not valid_chunks:
+            return []
+
+        total = len(valid_chunks)
+        if total <= max_chunks:
+            selected = valid_chunks
+        else:
+            # Controlled representative multi-stage sampling:
+            # - beginning (introduction, title, objectives, table of contents)
+            # - evenly-spaced middle chunks (topics, sections)
+            # - ending (conclusions, summary)
+            head_count = min(3, max(1, total // 5))
+            tail_count = min(3, max(1, total // 5))
+            middle_count = max_chunks - (head_count + tail_count)
+
+            selected_indices = set(range(head_count))
+            selected_indices.update(range(total - tail_count, total))
+
+            middle_pool = list(range(head_count, total - tail_count))
+            if middle_pool and middle_count > 0:
+                step = len(middle_pool) / float(middle_count)
+                for i in range(middle_count):
+                    idx = middle_pool[int(i * step)]
+                    selected_indices.add(idx)
+
+            sorted_indices = sorted(list(selected_indices))
+            selected = [valid_chunks[i] for i in sorted_indices[:max_chunks]]
+
+        results = []
+        for c in selected:
+            item = dict(c)
+            item["dense_score"] = 1.0
+            item["keyword_score"] = 1.0
+            item["rrf_score"] = 1.0
+            results.append(item)
+
+        return results
+
 
 _hybrid_retriever: Optional[HybridRetriever] = None
 

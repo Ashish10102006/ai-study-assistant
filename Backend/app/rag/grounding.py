@@ -82,12 +82,49 @@ class GroundingEvaluator:
         cls,
         query: str,
         candidates: List[Dict[str, Any]],
-        document_meta: Optional[Dict[str, Any]] = None
+        document_meta: Optional[Dict[str, Any]] = None,
+        is_summary: bool = False
     ) -> GroundingDecision:
         """
         Calculates grounding evidence across candidate chunks.
         Determines if question is STRONGLY_SUPPORTED, PARTIALLY_SUPPORTED, or NOT_SUPPORTED.
+        
+        For document summary requests (is_summary=True):
+          - Verifies readable content actually exists in the retrieved candidate chunks.
+          - If chunks are empty/blank: returns NOT_SUPPORTED with an informative extraction message.
+          - If readable content exists: returns STRONGLY_SUPPORTED since the requested information is the document itself.
+        
+        For factual questions (is_summary=False):
+          - Strictly checks substantive term coverage, exact phrases, and semantic similarity.
         """
+        # Summary request handling
+        if is_summary:
+            if not candidates or not any(c.get("content", "").strip() for c in candidates):
+                logger.warning("Grounding Evaluation | Summary requested on document with no readable text.")
+                return GroundingDecision(
+                    status=GroundingStatus.NOT_SUPPORTED,
+                    relevance_score=0.0,
+                    best_chunk_id=None,
+                    substantive_coverage=0.0,
+                    dense_similarity=0.0,
+                    matched_terms=[],
+                    missing_terms=[],
+                    reasoning="I couldn't generate a summary because no readable content was extracted from this document."
+                )
+
+            # Document has readable text chunks
+            logger.info(f"Grounding Evaluation | Valid document-level summary request with {len(candidates)} readable chunks.")
+            return GroundingDecision(
+                status=GroundingStatus.STRONGLY_SUPPORTED,
+                relevance_score=1.0,
+                best_chunk_id=candidates[0].get("id"),
+                substantive_coverage=1.0,
+                dense_similarity=1.0,
+                matched_terms=["document_content"],
+                missing_terms=[],
+                reasoning="Document-level summary request with verified readable content extracted from the document."
+            )
+
         if not candidates:
             return GroundingDecision(
                 status=GroundingStatus.NOT_SUPPORTED,

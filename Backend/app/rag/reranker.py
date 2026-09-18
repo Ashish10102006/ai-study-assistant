@@ -114,10 +114,10 @@ class ContextualReranker:
         return selected_chunks, citations
 
     @staticmethod
-    def evaluate_grounding(query: str, chunks: List[Dict[str, Any]], document_meta: Dict[str, Any] = None):
+    def evaluate_grounding(query: str, chunks: List[Dict[str, Any]], document_meta: Dict[str, Any] = None, is_summary: bool = False):
         """Delegates grounding decision to GroundingEvaluator."""
         from app.rag.grounding import GroundingEvaluator
-        return GroundingEvaluator.evaluate(query, chunks, document_meta)
+        return GroundingEvaluator.evaluate(query, chunks, document_meta, is_summary=is_summary)
 
     @staticmethod
     def build_context_block(chunks: List[Dict[str, Any]], filename: str = "Uploaded Document") -> str:

@@ -8,7 +8,7 @@
 [![Database](https://img.shields.io/badge/Database-Supabase%20PostgreSQL%20%2B%20pgvector-3ECF8E?style=flat&logo=supabase)](https://supabase.com)
 [![AI Engine](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?style=flat&logo=google)](https://ai.google.dev/)
 [![Search Engine](https://img.shields.io/badge/Search-Tavily%20Academic-6C5CE7?style=flat)](https://tavily.com/)
-[![Tests](https://img.shields.io/badge/Tests-39%20Passed%20%2F%200%20Failed-brightgreen?style=flat&logo=pytest)](Backend/tests/)
+[![Tests](https://img.shields.io/badge/Tests-40%20Passed%20%2F%200%20Failed-brightgreen?style=flat&logo=pytest)](Backend/tests/)
 
 ---
 
@@ -137,12 +137,14 @@ RRF ensures documents that perform moderately well in both searches outrank docu
 Evaluates the top RRF candidate chunks against query terms, heading alignment, and chunk completeness. It selects the top 3–5 highest-yield passages and generates structured citation tags with exact page numbers and document names.
 
 ### 5. Strict Document Grounding & Relevance Gating (GroundingEvaluator)
-To prevent subtle hallucinations when a student asks about a topic absent from their uploaded document, the system passes candidates through a dedicated `GroundingEvaluator`:
-* **Stopword Stripping**: Filters out grammatical boilerplate, interrogatives, and generic academic filler to extract the substantive subject nouns, verbs, and formulas.
-* **Three-Tier Classification**: Evaluates substantive overlap and assigns:
+To prevent hallucinations and guarantee academic rigor, all document queries pass through an intent-aware `GroundingEvaluator`:
+* **Intent-Aware Routing**:
+  * **Document Summary / Overview Intent** (`DOCUMENT_SUMMARY`): Requests like *"give me the summary of the pdf"*, *"summarize this document"*, *"what is this document about?"*, or *"give me the key points"* trigger representative sequential chunk retrieval across the document (`retrieve_for_summary`). Grounding validates that readable extracted chunks exist. If valid, a grounded summary is synthesized strictly from document context; if unreadable/empty, it returns: *"I couldn't generate a summary because no readable content was extracted from this document."*
+  * **Document Factual Intent** (`DOCUMENT_RAG`): Factual point questions undergo stopword stripping, dense cosine similarity calculation, keyword matching, and substantive term coverage verification.
+* **Three-Tier Classification for Factual Queries**:
   * `STRONGLY_SUPPORTED`: Complete conceptual support found in document chunks $\rightarrow$ generates fully grounded answer with page citations.
   * `PARTIALLY_SUPPORTED`: Core concept present but specific sub-aspect missing $\rightarrow$ answers available facts with explicit caveat regarding missing terms.
-  * `NOT_SUPPORTED`: Substantive keywords absent from uploaded document $\rightarrow$ **Immediate refusal** ("I couldn't find this information in the uploaded document..."). **Under zero circumstances does the system fall back to Gemini general knowledge for document-scoped questions.**
+  * `NOT_SUPPORTED`: Substantive keywords absent from uploaded document $\rightarrow$ **Immediate refusal** ("This question is not supported by the uploaded document..."). **Under zero circumstances does the system fall back to Gemini general knowledge for document-scoped questions.**
 
 ---
 
@@ -150,9 +152,10 @@ To prevent subtle hallucinations when a student asks about a topic absent from t
 
 | Input | Processing Pipeline | Output |
 |:---|:---|:---|
-| **Student question** | Adaptive query router (intent classification) | Selected processing pathway (Doc, Web, Direct, or Hybrid) |
+| **Student question** | Adaptive query router (intent classification) | Selected processing pathway (Doc, Summary, Web, Direct, or Hybrid) |
 | **Uploaded document** (`.pdf`, `.docx`, `.txt`, `.md`) | File validation $\rightarrow$ structure extraction $\rightarrow$ chunking $\rightarrow$ embeddings | Stored document records with indexed chunk vectors |
-| **Document question** | Hybrid retrieval (vector + keyword) $\rightarrow$ RRF $\rightarrow$ contextual reranking $\rightarrow$ `GroundingEvaluator` | Top-K grounded chunks with page numbers OR honest document refusal |
+| **Document summary request** | Sequential representative retrieval $\rightarrow$ content presence check $\rightarrow$ strict document synthesis | Structured document summary with page/section citations |
+| **Document factual question** | Hybrid retrieval (vector + keyword) $\rightarrow$ RRF $\rightarrow$ contextual reranking $\rightarrow$ `GroundingEvaluator` | Top-K grounded chunks with page numbers OR honest document refusal |
 | **Current / web question** | Academic query construction $\rightarrow$ Tavily search API | Authenticated web references with URLs and excerpts |
 | **Assembled context** | Pedagogical prompt engineering $\rightarrow$ Google Gemini generation | Grounded Markdown answer with citations and math |
 | **Quiz request** | 5 cognitive dimensions $\rightarrow$ Gemini JSON $\rightarrow$ duplicate template rejection | Interactive 5-question MCQ quiz with unique conceptual angles |

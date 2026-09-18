@@ -31,6 +31,30 @@ def test_adaptive_router_document_rag():
     assert decision2.use_web is False
 
 
+def test_adaptive_router_document_summary():
+    router = get_adaptive_router()
+
+    summary_queries = [
+        "give me the summary of the pdf",
+        "Summarize this document",
+        "What is this document about?",
+        "Give me the key points",
+        "Give me an overview",
+        "What are the main takeaways?",
+        "Provide a summary of the uploaded notes"
+    ]
+    for q in summary_queries:
+        decision = router.route(q, document_id="doc-12345")
+        assert decision.intent == QueryIntent.DOCUMENT_SUMMARY, f"Failed on: {q}"
+        assert decision.use_document is True
+        assert decision.use_web is False
+
+    # Also test without explicit document_id but with has_user_documents=True
+    decision_user_doc = router.route("Summarize my uploaded notes", has_user_documents=True)
+    assert decision_user_doc.intent == QueryIntent.DOCUMENT_SUMMARY
+    assert decision_user_doc.use_document is True
+
+
 def test_adaptive_router_web_search():
     router = get_adaptive_router()
 

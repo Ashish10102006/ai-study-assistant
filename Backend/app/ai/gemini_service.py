@@ -108,7 +108,8 @@ class GeminiService:
                 "   - DO NOT silently fill in the missing portion from general knowledge.\n"
                 "6. If the document context does NOT contain enough evidence to answer the question, state unambiguously:\n"
                 "   'I couldn't find this information in the uploaded document.'\n"
-                "7. Format using clean Markdown with bold key terms and bullet points."
+                "7. For summary, overview, or key takeaway requests: deliver a well-structured document summary strictly synthesizing the concepts, agenda, sections, or findings present in 'Uploaded Document Context'. Cite page numbers and sections where present.\n"
+                "8. Format using clean Markdown with bold key terms and bullet points."
             )
         else:
             system_instruction = (

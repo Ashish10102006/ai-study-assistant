@@ -9,6 +9,7 @@ logger = logging.getLogger("ai_study_assistant.rag.router")
 
 class QueryIntent(str, Enum):
     DOCUMENT_RAG = "DOCUMENT_RAG"
+    DOCUMENT_SUMMARY = "DOCUMENT_SUMMARY"
     WEB_SEARCH = "WEB_SEARCH"
     GENERAL_ACADEMIC = "GENERAL_ACADEMIC"
     HYBRID_DOC_AND_WEB = "HYBRID_DOC_AND_WEB"
@@ -28,7 +29,23 @@ class AdaptiveRouter:
     Intelligent query understanding and adaptive routing engine.
     Inspects student question semantics, active document context,
     and search flags to determine the optimal retrieval pathway.
+    Distinguishes between document factual queries, document summary/overview
+    requests, live web queries, and general academic concepts.
     """
+
+    # Indicators for document-level summary / overview requests
+    SUMMARY_INDICATORS = [
+        r"\b(summarize|summary|summarise)\b.*?\b(doc(ument)?|pdf|file|notes?|paper|textbook|slides?|it|this)?\b",
+        r"\b(give|provide|show|generate|write|get)\b.*?\b(a\s+|the\s+)?(summary|overview|abstract|synopsis|recap)\b",
+        r"\b(what|tell me what)\s+(is\s+)?(this|the)\s+(doc(ument)?|pdf|file|paper)\s+(all\s+)?about\b",
+        r"\b(give|tell|show|explain)\s+(me\s+)?(the\s+)?(overview|main points|key points|takeaways|key takeaways|core ideas|highlights|important points)\b",
+        r"\b(what\s+are\s+the\s+)?(main|key|important|critical)\s+(points|takeaways|topics|findings|aspects|highlights)\b",
+        r"^(summarize|summary|overview|brief summary|recap|abstract)\b",
+        r"\bsummarize\s+(this|the)\s+(doc(ument)?|pdf|file|notes?|slides?)\b",
+        r"\bsummary\s+of\s+(this|the)\s+(doc(ument)?|pdf|file|notes?|slides?)\b",
+        r"\bexplain\s+(this|the)\s+(doc(ument)?|pdf|file)\b",
+        r"\bwhat\s+does\s+this\s+(doc(ument)?|pdf|file)\s+(say|contain|cover)\b",
+    ]
 
     # Indicators that the question refers to uploaded materials (allowing optional subject descriptor like 'DBMS notes')
     DOC_INDICATORS = [
@@ -55,6 +72,12 @@ class AdaptiveRouter:
         r"\b(does|is)\b.*?\b(notes?|pdf|slides?).*?\b(current|latest|modern|outdated|deprecated|valid)\b",
         r"\b(notes?|pdf|slides?).*?\b(with|against|and)\b.*?\b(current|latest|web|modern)\b",
     ]
+
+    @classmethod
+    def is_summary_request(cls, query: str) -> bool:
+        """Determines whether a query is asking for a document-level summary or overview."""
+        q = query.strip().lower()
+        return any(bool(re.search(pat, q)) for pat in cls.SUMMARY_INDICATORS)
 
     def route(
         self,
@@ -105,6 +128,17 @@ class AdaptiveRouter:
                     extracted_keywords=keywords
                 )
 
+            # Check if user asks for a document-level summary / overview
+            if self.is_summary_request(q):
+                return RoutingDecision(
+                    intent=QueryIntent.DOCUMENT_SUMMARY,
+                    use_document=True,
+                    use_web=False,
+                    reasoning="Query is a document-level summary or overview request on the attached document.",
+                    confidence=0.99,
+                    extracted_keywords=keywords
+                )
+
             return RoutingDecision(
                 intent=QueryIntent.DOCUMENT_RAG,
                 use_document=True,
@@ -117,6 +151,16 @@ class AdaptiveRouter:
         # Check document indicators in question text (even without explicit document_id)
         doc_match = any(re.search(pat, q) for pat in self.DOC_INDICATORS)
         if doc_match and has_user_documents:
+            if self.is_summary_request(q):
+                return RoutingDecision(
+                    intent=QueryIntent.DOCUMENT_SUMMARY,
+                    use_document=True,
+                    use_web=False,
+                    reasoning="Query references uploaded notes/document summary; routing to Document Summary RAG.",
+                    confidence=0.95,
+                    extracted_keywords=keywords
+                )
+
             return RoutingDecision(
                 intent=QueryIntent.DOCUMENT_RAG,
                 use_document=True,

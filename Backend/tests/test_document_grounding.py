@@ -206,5 +206,63 @@ def test_api_document_grounding_end_to_end():
     )
     assert resp_isolation.status_code == 404
 
+    # --- 5. DOCUMENT SUMMARY QUERIES (Must be supported strictly from document chunks) ---
+    summary_queries = [
+        "give me the summary of the pdf",
+        "Summarize this document",
+        "What is this document about?",
+        "Give me the key points",
+        "Give me an overview"
+    ]
+    for q in summary_queries:
+        resp_sum = client.post(
+            f"/api/documents/{doc_id}/ask",
+            json={"question": q},
+            headers=headers_a
+        )
+        assert resp_sum.status_code == 200, f"Failed on summary query: {q}"
+        data_sum = resp_sum.json()
+        assert data_sum["document_used"] is True
+        assert data_sum["routing_decision"]["intent"] == "DOCUMENT_SUMMARY"
+        assert data_sum["routing_decision"]["grounding_decision"]["status"] == "STRONGLY_SUPPORTED"
+        assert len(data_sum["citations"]) > 0
+        assert "not supported" not in data_sum["answer"].lower()
+
+    # --- 6. UNSUPPORTED FACTUAL QUESTION (e.g. Theory of Relativity on OS paging doc) ---
+    resp_relativity = client.post(
+        f"/api/documents/{doc_id}/ask",
+        json={"question": "What is the theory of relativity?"},
+        headers=headers_a
+    )
+    assert resp_relativity.status_code == 200
+    data_rel = resp_relativity.json()
+    assert data_rel["document_used"] is True
+    assert data_rel["routing_decision"]["grounding_decision"]["status"] == "NOT_SUPPORTED"
+    assert "not supported" in data_rel["answer"].lower() or "couldn't find" in data_rel["answer"].lower()
+    assert "einstein" not in data_rel["answer"].lower()
+
+    # --- 7. EMPTY DOCUMENT HANDLING ---
+    empty_doc = storage.save_document(
+        user_id=user_a,
+        file_name="empty_doc.pdf",
+        file_type="application/pdf",
+        file_size=100,
+        storage_path="mock_empty"
+    )
+    empty_id = empty_doc["id"]
+    storage.save_document_chunks(empty_id, [])
+    storage.update_document_status(empty_id, "COMPLETED")
+
+    resp_empty_sum = client.post(
+        f"/api/documents/{empty_id}/ask",
+        json={"question": "give me the summary of the pdf"},
+        headers=headers_a
+    )
+    assert resp_empty_sum.status_code == 200
+    data_empty = resp_empty_sum.json()
+    assert "no readable content" in data_empty["answer"].lower()
+
     # Cleanup
+    storage.delete_document(empty_id, user_a)
     storage.delete_document(doc_id, user_a)
+
