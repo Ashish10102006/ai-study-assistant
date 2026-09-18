@@ -60,7 +60,7 @@ class GeminiService:
                 logger.warning(f"Gemini generation with {model_name} failed: {e}")
                 last_error = e
 
-        raise RuntimeError(f"AI service is temporarily unavailable. Please try again.")
+        raise RuntimeError(f"AI service is temporarily unavailable: {last_error}")
 
     # ==========================================================
     # ACADEMIC EXPLANATION GENERATOR

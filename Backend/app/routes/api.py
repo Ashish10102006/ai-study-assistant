@@ -183,7 +183,7 @@ async def ask_question(
     except Exception as e:
         logger.error(f"Gemini generation error: {e}")
         explanation = "AI service is temporarily unavailable. Please try again."
-        warning_msg = "AI service is temporarily unavailable."
+        warning_msg = f"AI service is temporarily unavailable: {str(e)[:160]}"
 
     # 6. Save assistant response with metadata
     assistant_msg = storage.add_message(

@@ -34,9 +34,8 @@ class Settings(BaseSettings):
     MAX_FILE_SIZE_MB: int = 25
 
     # AI Model Settings - configured with verified, high-performance Google Gemini models
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
     GEMINI_FALLBACK_MODELS: list[str] = [
-        "gemini-2.0-flash",
         "gemini-1.5-flash",
         "gemini-2.0-flash-lite",
         "gemini-1.5-pro"
