@@ -334,3 +334,27 @@ def test_critical_github_security():
     assert "Frontend/.env" in gitignore_text
     assert "*.db" in gitignore_text
     assert "study_assistant.db" in gitignore_text
+
+
+# ==============================================================================
+# 11. VERCEL SERVERLESS DEPLOYMENT CONFIGURATION
+# ==============================================================================
+def test_vercel_backend_configuration():
+    """Verify Backend/vercel.json adheres to modern schema without legacy builds conflict."""
+    base_dir = Path(__file__).resolve().parent.parent.parent
+    vercel_json_path = base_dir / "Backend" / "vercel.json"
+    assert vercel_json_path.exists(), "Backend/vercel.json must exist"
+
+    with open(vercel_json_path, "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+    # In modern Vercel, legacy 'builds' must NOT be mixed with 'functions'
+    assert "builds" not in config, "Legacy 'builds' property must not be present"
+    assert "functions" in config, "'functions' configuration must be present"
+    assert "main.py" in config["functions"], "Entrypoint main.py must be configured in functions"
+    assert config["functions"]["main.py"].get("maxDuration") == 60
+
+    python_version_path = base_dir / "Backend" / ".python-version"
+    assert python_version_path.exists(), "Backend/.python-version must exist"
+    assert python_version_path.read_text(encoding="utf-8").strip() == "3.13"
+

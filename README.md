@@ -395,9 +395,10 @@ pytest tests/test_adaptive_rag.py tests/test_documents.py tests/test_ai.py tests
 * **`tests/test_documents.py`**: 2 passed (Validation, Chunking)
 * **`tests/test_ai.py`**: 2 passed (Initialization, Prompt construction)
 * **`tests/test_api.py`**: 5 passed (Health, Root, Conversations, Profiles)
-* **Total Unit/RAG Suite**: **19 Passed, 0 Failed, 0 Skipped** (1.09s)
-* **Pre-GitHub Verification Suite**: **5 Passed, 5 Skipped (API credentials optional), 0 Failed**
-* **Frontend Production Build**: **Passed** (`vite build` compiled 1,954 modules in 17.03s)
+* **`tests/test_search.py`**: 1 passed (Tavily search logic)
+* **`tests/test_pre_github_verification.py`**: 6 passed, 5 skipped (live credentials optional)
+* **Total Automated Test Suite**: **26 Passed, 5 Skipped, 0 Failed**
+* **Frontend Production Build**: **Passed** (`vite build` compiled 1,954 modules)
 
 ---
 
@@ -406,49 +407,46 @@ pytest tests/test_adaptive_rag.py tests/test_documents.py tests/test_ai.py tests
 ```
 ai-study-assistant/
 ├── Backend/
+│   ├── .python-version         # Pinned Python 3.13 runtime for Vercel
+│   ├── vercel.json             # Modern Vercel Serverless Function configuration
 │   ├── app/
-│   │   ├── ai/                     # Gemini service & prompt generation
+│   │   ├── ai/                 # Gemini service & prompt generation
 │   │   │   └── gemini_service.py
-│   │   ├── config/                 # Pydantic environment configuration
+│   │   ├── config/             # Pydantic environment configuration
 │   │   │   └── settings.py
-│   │   ├── documents/              # Structure-aware document processor
+│   │   ├── documents/          # Structure-aware document processor
 │   │   │   └── processor.py
-│   │   ├── middleware/             # Auth guard & Guest token sanitizer
+│   │   ├── middleware/         # Auth guard & Guest token sanitizer
 │   │   │   └── auth.py
-│   │   ├── models/                 # Pydantic request/response schemas
+│   │   ├── models/             # Pydantic request/response schemas
 │   │   │   └── schemas.py
-│   │   ├── rag/                    # Adaptive RAG core module
+│   │   ├── rag/                # Adaptive RAG core module
 │   │   │   ├── __init__.py
-│   │   │   ├── router.py           # Query understanding & adaptive intent router
-│   │   │   ├── embeddings.py       # text-embedding-004 & fallback embedding service
-│   │   │   ├── retriever.py        # Hybrid retriever (Dense + Keyword FTS) & RRF
-│   │   │   └── reranker.py         # Contextual reranker & citation builder
-│   │   ├── routes/                 # FastAPI endpoints (/ask, /chat, /documents)
+│   │   │   ├── router.py       # Query understanding & adaptive intent router
+│   │   │   ├── embeddings.py   # text-embedding-004 & fallback embedding service
+│   │   │   ├── retriever.py    # Hybrid retriever (Dense + Keyword FTS) & RRF
+│   │   │   └── reranker.py     # Contextual reranker & citation builder
+│   │   ├── routes/             # FastAPI endpoints (/ask, /chat, /documents)
 │   │   │   └── api.py
-│   │   ├── search/                 # Tavily search integration
+│   │   ├── search/             # Tavily search integration
 │   │   │   └── tavily_service.py
-│   │   └── services/               # Dual-driver persistence (Supabase + SQLite)
+│   │   └── services/           # Dual-driver persistence (Supabase + SQLite)
 │   │       ├── storage_service.py
 │   │       └── supabase_client.py
-│   ├── tests/                      # Automated test suite
-│   │   ├── test_adaptive_rag.py
-│   │   ├── test_documents.py
-│   │   ├── test_ai.py
-│   │   ├── test_api.py
-│   │   └── test_pre_github_verification.py
-│   ├── main.py                     # FastAPI application entrypoint
-│   └── requirements.txt            # Python dependencies
+│   ├── tests/                  # Automated test suite
+│   ├── main.py                 # FastAPI application entrypoint
+│   └── requirements.txt        # Python dependencies
 ├── Database/
-│   ├── schema.sql                  # Production Supabase PostgreSQL schema + pgvector
+│   ├── schema.sql              # Production Supabase PostgreSQL schema + pgvector
 │   ├── fix_permissions.sql
 │   └── seed.sql
 ├── Frontend/
-│   ├── src/
-│   │   ├── components/             # Reusable UI components & 3D canvases
-│   │   ├── pages/                  # StudyAssistant, Materials, Conversations
-│   │   └── services/               # Axios API client & Supabase client
+│   ├── src/                    # React 18 + Vite frontend
+│   ├── vercel.json             # SPA client rewrite rules
 │   ├── package.json
 │   └── vite.config.js
+├── render.yaml                 # Render cloud web service blueprint
+├── .gitignore                  # Strict credential, cache & db ignore rules
 └── README.md
 ```
 
@@ -468,5 +466,12 @@ Unlike standard naive RAG implementations that split documents into arbitrary ch
 
 ## 17. Deployment & Live Links
 
-* **Production Application**: [https://ai-study-assistant-five-tau.vercel.app](https://ai-study-assistant-five-tau.vercel.app)
+* **Production Frontend**: [https://ai-study-assistant-five-tau.vercel.app](https://ai-study-assistant-five-tau.vercel.app)
+* **Production Backend**: [https://study-assistant-backend-rho.vercel.app](https://study-assistant-backend-rho.vercel.app)
 * **GitHub Repository**: [https://github.com/Ashish10102006/ai-study-assistant](https://github.com/Ashish10102006/ai-study-assistant)
+
+### Deployment Architecture:
+* **Frontend (Vercel)**: React + Vite Single Page Application configured with SPA route rewrites in `Frontend/vercel.json`.
+* **Backend (Vercel Serverless Functions)**: Python 3.13 FastAPI application configured in `Backend/vercel.json` using modern zero-config rewrites and function maxDuration, with automatic `/tmp` uploads handling in serverless environments.
+* **Backend (Alternative: Render Web Service)**: Full containerized deployment blueprint via `render.yaml` with managed auto-deploys and environment synchronization.
+
