@@ -372,7 +372,12 @@ def test_vercel_path_rewrite_middleware():
     assert res_docs.status_code == 200
     assert isinstance(res_docs.json(), list)
 
-    # 3. Test direct /main.py fallback to root endpoint
+    # 3. Test /api/health via /main.py?__path=/api/health
+    res_qs = client.get("/main.py?__path=/api/health")
+    assert res_qs.status_code == 200
+    assert res_qs.json()["status"] == "healthy"
+
+    # 4. Test direct /main.py fallback to root endpoint
     res_root = client.get("/main.py")
     assert res_root.status_code == 200
     assert res_root.json()["platform"] == "AI STUDY ASSISTANT"

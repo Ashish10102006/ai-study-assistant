@@ -52,15 +52,29 @@ class VercelPathRewriteMiddleware:
                             break
 
                 # 2. Check query string for __path parameter
-                if not target_path and "query_string" in scope:
+                if "query_string" in scope:
                     qs = scope["query_string"].decode("utf-8", errors="ignore")
+                    clean_params = []
                     for param in qs.split("&"):
                         if param.startswith("__path="):
                             from urllib.parse import unquote
-                            target_path = unquote(param.split("=", 1)[1].split("?")[0].strip())
-                            break
+                            val = unquote(param.split("=", 1)[1].strip())
+                            if val and not target_path:
+                                target_path = val
+                        elif param:
+                            clean_params.append(param)
+                    if target_path:
+                        scope["query_string"] = "&".join(clean_params).encode("utf-8")
 
                 if target_path:
+                    # Normalize path (ensure single leading slash, remove duplicate slashes)
+                    if not target_path.startswith("/"):
+                        target_path = "/" + target_path
+                    while "//" in target_path:
+                        target_path = target_path.replace("//", "/")
+                    if len(target_path) > 1 and target_path.endswith("/"):
+                        target_path = target_path.rstrip("/")
+
                     scope["path"] = target_path
                     scope["raw_path"] = target_path.encode("utf-8")
                 else:
