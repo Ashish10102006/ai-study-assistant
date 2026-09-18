@@ -20,12 +20,17 @@ async def get_current_user(
         if user:
             return user
 
-    # Sanitize and validate client guest ID
+    # Sanitize and validate client guest ID or fallback token identity
     guest_id = "guest_default"
     if x_guest_id and isinstance(x_guest_id, str):
         cleaned = re.sub(r'[^a-zA-Z0-9_-]', '', x_guest_id.strip())[:64]
         if cleaned:
             guest_id = cleaned if cleaned.startswith("guest_") else f"guest_{cleaned}"
+    elif authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1].strip()
+        cleaned = re.sub(r'[^a-zA-Z0-9_-]', '', token)[:64]
+        if cleaned:
+            guest_id = f"user_{cleaned}"
 
     return {
         "id": guest_id,

@@ -21,7 +21,10 @@ import {
   AlertCircle,
   FileSearch,
   ExternalLink,
-  ChevronDown
+  ChevronDown,
+  Bookmark,
+  Trash2,
+  Award
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -58,6 +61,10 @@ export default function StudyAssistant() {
   // Active Tool Mode (assistant vs notes vs quiz vs questions)
   const [activeTab, setActiveTab] = useState('assistant'); // 'assistant', 'notes', 'quiz', 'questions'
   const [generatedNotes, setGeneratedNotes] = useState(null);
+  const [savedNotesList, setSavedNotesList] = useState([]);
+  const [savingNote, setSavingNote] = useState(false);
+  const [noteSavedMessage, setNoteSavedMessage] = useState(null);
+  const [notesCopied, setNotesCopied] = useState(false);
   const [quizData, setQuizData] = useState(null);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
@@ -171,6 +178,58 @@ export default function StudyAssistant() {
   };
 
   // Study Tools Generators
+  const loadSavedNotes = async () => {
+    try {
+      const data = await api.get('/api/study/saved-notes');
+      setSavedNotesList(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load saved notes:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'notes') {
+      loadSavedNotes();
+    }
+  }, [activeTab]);
+
+  const handleSaveNote = async () => {
+    if (!generatedNotes) return;
+    const targetTopic = customTopic.trim() || subject;
+    setSavingNote(true);
+    try {
+      await api.post('/api/study/saved-notes', {
+        topic: targetTopic,
+        content: generatedNotes,
+        subject: subject,
+        document_id: selectedDocumentId || undefined
+      });
+      setNoteSavedMessage('Saved to your Notes Library!');
+      setTimeout(() => setNoteSavedMessage(null), 3000);
+      loadSavedNotes();
+    } catch (err) {
+      console.error('Failed to save note:', err);
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  const handleDeleteSavedNote = async (noteId) => {
+    try {
+      await api.delete(`/api/study/saved-notes/${noteId}`);
+      setSavedNotesList(prev => prev.filter(n => n.id !== noteId));
+    } catch (err) {
+      console.error('Failed to delete note:', err);
+    }
+  };
+
+  const handleCopyNotes = () => {
+    if (!generatedNotes) return;
+    navigator.clipboard.writeText(generatedNotes);
+    setNotesCopied(true);
+    setTimeout(() => setNotesCopied(false), 2000);
+  };
+
   const handleGenerateNotes = async () => {
     const targetTopic = customTopic.trim() || subject;
     setLoading(true);
@@ -600,30 +659,127 @@ export default function StudyAssistant() {
                 Generates high-yield academic study notes on <strong>{customTopic || subject}</strong> with definitions, proofs, code, and exam checklists.
               </p>
             </div>
-            <button onClick={handleGenerateNotes} disabled={loading} className="btn btn-primary">
-              <Sparkles size={16} />
-              <span>Generate Notes</span>
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <button onClick={handleGenerateNotes} disabled={loading} className="btn btn-primary">
+                <Sparkles size={16} />
+                <span>{generatedNotes ? 'Regenerate Notes' : 'Generate Notes'}</span>
+              </button>
+            </div>
           </div>
 
           {loading && <Loading3D message="Synthesizing academic notes..." />}
 
-          {generatedNotes ? (
-            <div
-              style={{
-                background: 'rgba(10, 14, 23, 0.85)',
-                padding: 'clamp(1.25rem, 3vw, 2rem)',
-                borderRadius: '16px',
-                border: '1px solid rgba(255, 255, 255, 0.08)'
-              }}
-            >
-              <MarkdownRenderer content={generatedNotes} />
+          {generatedNotes && !loading && (
+            <div style={{ marginBottom: '2.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span className="badge badge-cyan">Active Generated Notes</span>
+                  {noteSavedMessage && (
+                    <span style={{ color: '#10b981', fontSize: '0.85rem', fontWeight: '600' }}>
+                      ✓ {noteSavedMessage}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '0.6rem' }}>
+                  <button
+                    onClick={handleCopyNotes}
+                    className="btn btn-secondary"
+                    style={{ padding: '0.45rem 0.9rem', fontSize: '0.85rem' }}
+                  >
+                    {notesCopied ? <Check size={15} color="#10b981" /> : <Copy size={15} />}
+                    <span>{notesCopied ? 'Copied' : 'Copy'}</span>
+                  </button>
+                  <button
+                    onClick={handleSaveNote}
+                    disabled={savingNote}
+                    className="btn btn-secondary"
+                    style={{ padding: '0.45rem 0.9rem', fontSize: '0.85rem' }}
+                  >
+                    <Bookmark size={15} />
+                    <span>{savingNote ? 'Saving...' : 'Save to Library'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: 'rgba(10, 14, 23, 0.85)',
+                  padding: 'clamp(1.25rem, 3vw, 2rem)',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                }}
+              >
+                <MarkdownRenderer content={generatedNotes} />
+              </div>
             </div>
-          ) : !loading && (
+          )}
+
+          {!generatedNotes && !loading && (
             <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
               Click "Generate Notes" above to create publication-grade revision notes.
             </div>
           )}
+
+          {/* Persistent Saved Notes Library */}
+          <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Bookmark size={18} color="var(--brand-cyan)" />
+                <h4 style={{ fontSize: '1.15rem', color: '#fff' }}>Saved Notes Library ({savedNotesList.length})</h4>
+              </div>
+            </div>
+
+            {savedNotesList.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.9rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px' }}>
+                No saved notes in your library yet. Generate and save notes above to review them anytime.
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1rem' }}>
+                {savedNotesList.map(note => (
+                  <div
+                    key={note.id}
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '14px',
+                      padding: '1.2rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                        <span className="badge badge-purple" style={{ fontSize: '0.72rem' }}>
+                          {note.subject || 'Study'}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteSavedNote(note.id)}
+                          title="Delete note"
+                          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.2rem' }}
+                          onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                      <h5 style={{ color: '#fff', fontSize: '1rem', marginBottom: '0.4rem' }}>{note.topic}</h5>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                        {new Date(note.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => { setGeneratedNotes(note.content); setCustomTopic(note.topic); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      className="btn btn-secondary"
+                      style={{ marginTop: '1rem', width: '100%', fontSize: '0.82rem', padding: '0.4rem 0.8rem', justifyContent: 'center' }}
+                    >
+                      <span>Load into View</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -651,81 +807,172 @@ export default function StudyAssistant() {
 
           {quizData && !loading && (
             <div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginBottom: '2rem' }}>
-                {quizData.questions.map((q, idx) => (
-                  <div
-                    key={q.id}
-                    style={{
-                      background: 'rgba(15, 23, 42, 0.6)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                      borderRadius: '16px',
-                      padding: '1.5rem'
-                    }}
-                  >
-                    <div style={{ fontWeight: '700', fontSize: '1.1rem', color: '#f8fafc', marginBottom: '1rem' }}>
-                      Question {idx + 1}: {q.question}
-                    </div>
+              {/* Score and Evaluation Summary Banner */}
+              {quizSubmitted && (
+                (() => {
+                  const qTotal = quizData.questions?.length || 0;
+                  const qCorrect = quizData.questions?.filter(q => (quizAnswers[q.id] || '').toUpperCase() === (q.correct_answer || '').toUpperCase()).length || 0;
+                  const qPct = qTotal > 0 ? Math.round((qCorrect / qTotal) * 100) : 0;
+                  const isHigh = qPct >= 80;
+                  const isMid = qPct >= 60;
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
-                      {q.options.map((opt) => {
-                        const isChosen = quizAnswers[q.id] === opt.key;
-                        const isCorrect = q.correct_answer === opt.key;
-                        let optBg = 'rgba(255, 255, 255, 0.04)';
-                        let optBorder = 'rgba(255, 255, 255, 0.1)';
-
-                        if (quizSubmitted) {
-                          if (isCorrect) {
-                            optBg = 'rgba(16, 185, 129, 0.2)';
-                            optBorder = '#10b981';
-                          } else if (isChosen && !isCorrect) {
-                            optBg = 'rgba(239, 68, 68, 0.2)';
-                            optBorder = '#ef4444';
-                          }
-                        } else if (isChosen) {
-                          optBg = 'rgba(0, 242, 254, 0.15)';
-                          optBorder = 'var(--brand-cyan)';
-                        }
-
-                        return (
-                          <div
-                            key={opt.key}
-                            onClick={() => handleSelectQuizAnswer(q.id, opt.key)}
-                            style={{
-                              padding: '0.85rem 1.25rem',
-                              borderRadius: '12px',
-                              background: optBg,
-                              border: `1px solid ${optBorder}`,
-                              cursor: quizSubmitted ? 'default' : 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.85rem',
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            <span style={{ fontWeight: '700', color: 'var(--brand-cyan)' }}>{opt.key}.</span>
-                            <span>{opt.text}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {quizSubmitted && (
-                      <div
-                        style={{
-                          marginTop: '1.25rem',
-                          padding: '1rem',
-                          borderRadius: '12px',
-                          background: 'rgba(0, 242, 254, 0.06)',
-                          border: '1px solid rgba(0, 242, 254, 0.2)',
-                          fontSize: '0.9rem',
-                          color: '#e2e8f0'
-                        }}
-                      >
-                        <strong>Explanation:</strong> {q.explanation}
+                  return (
+                    <div
+                      style={{
+                        background: isHigh ? 'rgba(16, 185, 129, 0.12)' : isMid ? 'rgba(0, 242, 254, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                        border: `1px solid ${isHigh ? '#10b981' : isMid ? 'var(--brand-cyan)' : '#f59e0b'}`,
+                        borderRadius: '16px',
+                        padding: '1.5rem',
+                        marginBottom: '2rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '1.25rem'
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: isHigh ? '#10b981' : isMid ? 'var(--brand-cyan)' : '#f59e0b' }}>
+                          Quiz Results & Pedagogical Feedback
+                        </div>
+                        <div style={{ fontSize: '1.75rem', fontWeight: '800', color: '#fff', marginTop: '0.2rem' }}>
+                          Score: {qCorrect} / {qTotal} ({qPct}%)
+                        </div>
+                        <p style={{ color: '#cbd5e1', fontSize: '0.9rem', marginTop: '0.3rem', maxWidth: '600px' }}>
+                          {isHigh
+                            ? '🏆 Mastery Demonstrated! Outstanding command across theoretical principles, mechanics, and edge cases.'
+                            : isMid
+                            ? '👍 Solid Academic Foundation! Review the step-by-step rationales below to master the subtle edge cases.'
+                            : '📚 Learning Opportunity Identified! Detailed pedagogical explanations below clarify the underlying invariants.'}
+                        </p>
                       </div>
-                    )}
-                  </div>
-                ))}
+                      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => { setQuizSubmitted(false); setQuizAnswers({}); }}
+                          className="btn btn-secondary"
+                          style={{ fontSize: '0.88rem' }}
+                        >
+                          <RotateCcw size={15} />
+                          <span>Retake Quiz</span>
+                        </button>
+                        <button
+                          onClick={handleGenerateQuiz}
+                          className="btn btn-primary"
+                          style={{ fontSize: '0.88rem' }}
+                        >
+                          <span>Try Another Quiz</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginBottom: '2rem' }}>
+                {quizData.questions.map((q, idx) => {
+                  const isQuestionCorrect = (quizAnswers[q.id] || '').toUpperCase() === (q.correct_answer || '').toUpperCase();
+
+                  return (
+                    <div
+                      key={q.id}
+                      style={{
+                        background: 'rgba(15, 23, 42, 0.6)',
+                        border: quizSubmitted
+                          ? (isQuestionCorrect ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)')
+                          : '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '16px',
+                        padding: '1.5rem',
+                        transition: 'all 0.25s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div style={{ fontWeight: '700', fontSize: '1.1rem', color: '#f8fafc' }}>
+                          Question {idx + 1}: {q.question}
+                        </div>
+                        {quizSubmitted && (
+                          isQuestionCorrect ? (
+                            <span style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid #10b981', borderRadius: '8px', padding: '0.2rem 0.6rem', fontSize: '0.8rem', fontWeight: '700' }}>
+                              ✓ Correct (+1)
+                            </span>
+                          ) : (
+                            <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', padding: '0.2rem 0.6rem', fontSize: '0.8rem', fontWeight: '700' }}>
+                              ✗ Incorrect (Answer: {q.correct_answer})
+                            </span>
+                          )
+                        )}
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
+                        {q.options.map((opt) => {
+                          const isChosen = (quizAnswers[q.id] || '').toUpperCase() === opt.key.toUpperCase();
+                          const isCorrect = (q.correct_answer || '').toUpperCase() === opt.key.toUpperCase();
+                          let optBg = 'rgba(255, 255, 255, 0.04)';
+                          let optBorder = 'rgba(255, 255, 255, 0.1)';
+
+                          if (quizSubmitted) {
+                            if (isCorrect) {
+                              optBg = 'rgba(16, 185, 129, 0.2)';
+                              optBorder = '#10b981';
+                            } else if (isChosen && !isCorrect) {
+                              optBg = 'rgba(239, 68, 68, 0.2)';
+                              optBorder = '#ef4444';
+                            }
+                          } else if (isChosen) {
+                            optBg = 'rgba(0, 242, 254, 0.15)';
+                            optBorder = 'var(--brand-cyan)';
+                          }
+
+                          return (
+                            <div
+                              key={opt.key}
+                              onClick={() => handleSelectQuizAnswer(q.id, opt.key)}
+                              style={{
+                                padding: '0.85rem 1.25rem',
+                                borderRadius: '12px',
+                                background: optBg,
+                                border: `1px solid ${optBorder}`,
+                                cursor: quizSubmitted ? 'default' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '0.85rem',
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                                <span style={{ fontWeight: '700', color: isCorrect && quizSubmitted ? '#10b981' : 'var(--brand-cyan)' }}>{opt.key}.</span>
+                                <span>{opt.text}</span>
+                              </div>
+                              {quizSubmitted && (
+                                isCorrect ? (
+                                  <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#10b981' }}>✓ Correct Answer</span>
+                                ) : isChosen ? (
+                                  <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#ef4444' }}>✗ Your Choice</span>
+                                ) : null
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {quizSubmitted && (
+                        <div
+                          style={{
+                            marginTop: '1.25rem',
+                            padding: '1rem',
+                            borderRadius: '12px',
+                            background: 'rgba(0, 242, 254, 0.06)',
+                            border: '1px solid rgba(0, 242, 254, 0.2)',
+                            fontSize: '0.9rem',
+                            color: '#e2e8f0'
+                          }}
+                        >
+                          <strong>Pedagogical Explanation:</strong> {q.explanation}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {!quizSubmitted ? (
@@ -737,10 +984,17 @@ export default function StudyAssistant() {
                   Submit & Check Answers
                 </button>
               ) : (
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => { setQuizSubmitted(false); setQuizAnswers({}); }}
+                    className="btn btn-secondary"
+                  >
+                    <RotateCcw size={16} />
+                    <span>Retake Quiz</span>
+                  </button>
                   <button
                     onClick={handleGenerateQuiz}
-                    className="btn btn-secondary"
+                    className="btn btn-primary"
                   >
                     Try Another Quiz
                   </button>

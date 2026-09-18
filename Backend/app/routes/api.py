@@ -20,6 +20,12 @@ from app.models.schemas import (
     StudyNotesRequest,
     StudyQuizRequest,
     StudyQuizResponse,
+    QuizVerifyRequest,
+    QuizVerifyResponse,
+    QuizVerifyResultItem,
+    SaveNoteRequest,
+    UpdateNoteRequest,
+    SavedNoteResponse,
     StudyQuestionsRequest,
     StudyQuestionsResponse,
     AcademicSearchRequest,
@@ -927,6 +933,155 @@ async def study_practice_questions(
     except Exception as e:
         logger.error(f"Practice questions error: {e}")
         raise HTTPException(status_code=503, detail="AI service is temporarily unavailable. Please try again.")
+
+
+@router.post("/study/quiz/verify", response_model=QuizVerifyResponse)
+async def study_quiz_verify(
+    req: QuizVerifyRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Deterministically verifies quiz answers, computes score, and checks answer integrity."""
+    results: List[QuizVerifyResultItem] = []
+    correct_count = 0
+
+    for item in req.answers:
+        user_key = item.selected_key.strip().upper()
+        corr_key = item.correct_answer.strip().upper()
+        is_corr = (user_key == corr_key)
+        if is_corr:
+            correct_count += 1
+        results.append(QuizVerifyResultItem(
+            question_id=item.question_id,
+            selected_key=user_key,
+            correct_answer=corr_key,
+            is_correct=is_corr
+        ))
+
+    total = len(req.answers)
+    pct = round((correct_count / total * 100), 1) if total > 0 else 0.0
+
+    return QuizVerifyResponse(
+        topic=req.topic,
+        score=correct_count,
+        total=total,
+        percentage=pct,
+        results=results
+    )
+
+
+# ==========================================================
+# SAVED STUDY NOTES CRUD (USER ISOLATION ENFORCED)
+# ==========================================================
+@router.get("/study/saved-notes", response_model=List[SavedNoteResponse])
+async def list_user_saved_notes(current_user: Dict[str, Any] = Depends(get_current_user)):
+    storage = get_storage_service()
+    rows = storage.list_saved_notes(current_user["id"])
+    return [
+        SavedNoteResponse(
+            id=r["id"],
+            user_id=r.get("user_id"),
+            topic=r["topic"],
+            subject=r.get("subject"),
+            content=r["content"],
+            document_id=r.get("document_id"),
+            created_at=datetime.fromisoformat(r["created_at"]) if isinstance(r["created_at"], str) else r["created_at"],
+            updated_at=datetime.fromisoformat(r["updated_at"]) if isinstance(r["updated_at"], str) else r["updated_at"]
+        ) for r in rows
+    ]
+
+
+@router.post("/study/saved-notes", response_model=SavedNoteResponse)
+async def create_user_saved_note(
+    req: SaveNoteRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    if not req.topic.strip() or not req.content.strip():
+        raise HTTPException(status_code=400, detail="Topic and content are required.")
+
+    storage = get_storage_service()
+    if req.document_id:
+        doc = storage.get_document(req.document_id, current_user["id"])
+        if not doc:
+            raise HTTPException(status_code=404, detail="Referenced document not found or unauthorized.")
+
+    note = storage.save_note(
+        user_id=current_user["id"],
+        topic=req.topic.strip(),
+        content=req.content.strip(),
+        subject=req.subject or "Computer Science",
+        document_id=req.document_id
+    )
+    return SavedNoteResponse(
+        id=note["id"],
+        user_id=note.get("user_id"),
+        topic=note["topic"],
+        subject=note.get("subject"),
+        content=note["content"],
+        document_id=note.get("document_id"),
+        created_at=datetime.fromisoformat(note["created_at"]) if isinstance(note["created_at"], str) else note["created_at"],
+        updated_at=datetime.fromisoformat(note["updated_at"]) if isinstance(note["updated_at"], str) else note["updated_at"]
+    )
+
+
+@router.get("/study/saved-notes/{note_id}", response_model=SavedNoteResponse)
+async def get_user_saved_note(
+    note_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    storage = get_storage_service()
+    note = storage.get_saved_note(note_id, current_user["id"])
+    if not note:
+        raise HTTPException(status_code=404, detail="Saved note not found or unauthorized.")
+    return SavedNoteResponse(
+        id=note["id"],
+        user_id=note.get("user_id"),
+        topic=note["topic"],
+        subject=note.get("subject"),
+        content=note["content"],
+        document_id=note.get("document_id"),
+        created_at=datetime.fromisoformat(note["created_at"]) if isinstance(note["created_at"], str) else note["created_at"],
+        updated_at=datetime.fromisoformat(note["updated_at"]) if isinstance(note["updated_at"], str) else note["updated_at"]
+    )
+
+
+@router.patch("/study/saved-notes/{note_id}", response_model=SavedNoteResponse)
+async def update_user_saved_note(
+    note_id: str,
+    req: UpdateNoteRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    storage = get_storage_service()
+    note = storage.update_saved_note(
+        note_id=note_id,
+        user_id=current_user["id"],
+        content=req.content,
+        topic=req.topic,
+        subject=req.subject
+    )
+    if not note:
+        raise HTTPException(status_code=404, detail="Saved note not found or unauthorized.")
+    return SavedNoteResponse(
+        id=note["id"],
+        user_id=note.get("user_id"),
+        topic=note["topic"],
+        subject=note.get("subject"),
+        content=note["content"],
+        document_id=note.get("document_id"),
+        created_at=datetime.fromisoformat(note["created_at"]) if isinstance(note["created_at"], str) else note["created_at"],
+        updated_at=datetime.fromisoformat(note["updated_at"]) if isinstance(note["updated_at"], str) else note["updated_at"]
+    )
+
+
+@router.delete("/study/saved-notes/{note_id}")
+async def delete_user_saved_note(
+    note_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    storage = get_storage_service()
+    success = storage.delete_saved_note(note_id, current_user["id"])
+    if not success:
+        raise HTTPException(status_code=404, detail="Saved note not found or unauthorized.")
+    return {"message": "Saved note deleted successfully."}
 
 
 # ==========================================================

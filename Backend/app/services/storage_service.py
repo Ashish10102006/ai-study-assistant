@@ -104,6 +104,19 @@ class StorageService:
             )
         """)
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS saved_notes (
+                id TEXT PRIMARY KEY,
+                user_id TEXT,
+                topic TEXT,
+                subject TEXT,
+                content TEXT,
+                document_id TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_saved_notes_user ON saved_notes(user_id)")
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_interests (
                 id TEXT PRIMARY KEY,
                 user_id TEXT,
@@ -744,6 +757,172 @@ class StorageService:
         conn.commit()
         conn.close()
         return self.get_or_create_profile(user_id)
+
+    # ==========================================================
+    # SAVED NOTES PERSISTENCE & USER ISOLATION
+    # ==========================================================
+    def save_note(
+        self,
+        user_id: str,
+        topic: str,
+        content: str,
+        subject: Optional[str] = "Computer Science",
+        document_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        note_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        sb = get_supabase_admin()
+
+        if sb:
+            try:
+                res = sb.table("saved_notes").insert({
+                    "id": note_id,
+                    "user_id": user_id,
+                    "topic": topic,
+                    "subject": subject,
+                    "content": content,
+                    "document_id": document_id,
+                    "created_at": now,
+                    "updated_at": now
+                }).execute()
+                if res.data:
+                    return res.data[0]
+            except Exception as e:
+                logger.info(f"Supabase saved_notes notice: {e}. Writing to local database.")
+
+        conn = sqlite3.connect(str(self.db_path))
+        c = conn.cursor()
+        c.execute("""
+            INSERT INTO saved_notes (id, user_id, topic, subject, content, document_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (note_id, user_id, topic, subject, content, document_id, now, now))
+        conn.commit()
+        conn.close()
+
+        return {
+            "id": note_id,
+            "user_id": user_id,
+            "topic": topic,
+            "subject": subject,
+            "content": content,
+            "document_id": document_id,
+            "created_at": now,
+            "updated_at": now
+        }
+
+    def list_saved_notes(self, user_id: str) -> List[Dict[str, Any]]:
+        sb = get_supabase_admin()
+        if sb:
+            try:
+                res = sb.table("saved_notes").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
+                if res.data:
+                    return res.data
+            except Exception as e:
+                logger.info(f"Supabase list_saved_notes notice: {e}. Reading from local database.")
+
+        conn = sqlite3.connect(str(self.db_path))
+        c = conn.cursor()
+        c.execute("SELECT id, user_id, topic, subject, content, document_id, created_at, updated_at FROM saved_notes WHERE user_id = ? ORDER BY created_at DESC", (user_id,))
+        rows = c.fetchall()
+        conn.close()
+
+        return [
+            {
+                "id": r[0],
+                "user_id": r[1],
+                "topic": r[2],
+                "subject": r[3],
+                "content": r[4],
+                "document_id": r[5],
+                "created_at": r[6],
+                "updated_at": r[7]
+            } for r in rows
+        ]
+
+    def get_saved_note(self, note_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+        sb = get_supabase_admin()
+        if sb:
+            try:
+                res = sb.table("saved_notes").select("*").eq("id", note_id).eq("user_id", user_id).execute()
+                if res.data:
+                    return res.data[0]
+            except Exception:
+                pass
+
+        conn = sqlite3.connect(str(self.db_path))
+        c = conn.cursor()
+        c.execute("SELECT id, user_id, topic, subject, content, document_id, created_at, updated_at FROM saved_notes WHERE id = ? AND user_id = ?", (note_id, user_id))
+        row = c.fetchone()
+        conn.close()
+
+        if not row:
+            return None
+
+        return {
+            "id": row[0],
+            "user_id": row[1],
+            "topic": row[2],
+            "subject": row[3],
+            "content": row[4],
+            "document_id": row[5],
+            "created_at": row[6],
+            "updated_at": row[7]
+        }
+
+    def update_saved_note(
+        self,
+        note_id: str,
+        user_id: str,
+        content: Optional[str] = None,
+        topic: Optional[str] = None,
+        subject: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        now = datetime.now(timezone.utc).isoformat()
+        fields = {}
+        if content is not None:
+            fields["content"] = content
+        if topic is not None:
+            fields["topic"] = topic
+        if subject is not None:
+            fields["subject"] = subject
+
+        if not fields:
+            return self.get_saved_note(note_id, user_id)
+
+        fields["updated_at"] = now
+        sb = get_supabase_admin()
+        if sb:
+            try:
+                sb.table("saved_notes").update(fields).eq("id", note_id).eq("user_id", user_id).execute()
+            except Exception:
+                pass
+
+        conn = sqlite3.connect(str(self.db_path))
+        c = conn.cursor()
+        set_clause = ", ".join([f"{k} = ?" for k in fields.keys()])
+        params = list(fields.values()) + [note_id, user_id]
+        c.execute(f"UPDATE saved_notes SET {set_clause} WHERE id = ? AND user_id = ?", tuple(params))
+        conn.commit()
+        conn.close()
+
+        return self.get_saved_note(note_id, user_id)
+
+    def delete_saved_note(self, note_id: str, user_id: str) -> bool:
+        sb = get_supabase_admin()
+        if sb:
+            try:
+                sb.table("saved_notes").delete().eq("id", note_id).eq("user_id", user_id).execute()
+            except Exception:
+                pass
+
+        conn = sqlite3.connect(str(self.db_path))
+        c = conn.cursor()
+        c.execute("DELETE FROM saved_notes WHERE id = ? AND user_id = ?", (note_id, user_id))
+        affected = c.rowcount
+        conn.commit()
+        conn.close()
+
+        return affected > 0
 
 
 _storage_instance: Optional[StorageService] = None

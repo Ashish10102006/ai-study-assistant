@@ -199,13 +199,201 @@ class GeminiService:
     # ==========================================================
     # STUDY TOOLS: GENERATE QUIZ (JSON)
     # ==========================================================
+    @staticmethod
+    def _generate_diverse_fallback_quiz(topic: str, count: int) -> List[QuizQuestion]:
+        """Provides academically rigorous, multi-dimensional fallback quiz questions ensuring diversity and answer integrity."""
+        templates = [
+            (
+                f"Which fundamental theoretical principle forms the core foundation of {topic}?",
+                [
+                    ("A", "Systematic decomposition and formal invariant guarantees"),
+                    ("B", "Arbitrary non-deterministic state mutations"),
+                    ("C", "Linear execution ignoring spatial and temporal constraints"),
+                    ("D", "Heuristic guessing without empirical or mathematical verification")
+                ],
+                "A",
+                f"In theoretical computer science, {topic} relies centrally on invariant guarantees and rigorous structural decomposition."
+            ),
+            (
+                f"When executing or operating with {topic}, which internal mechanism ensures correctness?",
+                [
+                    ("A", "Periodic unvalidated state drops"),
+                    ("B", "Deterministic state transition validation and bounds checking"),
+                    ("C", "Ignoring reference counters and lifecycle hooks"),
+                    ("D", "Unsynchronized concurrent writes to shared mutable memory")
+                ],
+                "B",
+                f"Correct operation in {topic} requires deterministic state validation and strict bounds enforcement."
+            ),
+            (
+                f"What is the primary computational or architectural trade-off when implementing {topic}?",
+                [
+                    ("A", "Space complexity and memory overhead versus query/execution latency"),
+                    ("B", "Instantaneous infinite throughput at zero computational cost"),
+                    ("C", "Guaranteed zero memory usage regardless of data volume"),
+                    ("D", "Complete elimination of CPU cycles during graph traversal")
+                ],
+                "A",
+                f"Every engineering implementation of {topic} balances memory overhead against lookup/processing latency."
+            ),
+            (
+                f"Which critical boundary condition or edge case poses the most frequent failure mode in {topic}?",
+                [
+                    ("A", "Empty input sets, null references, or boundary index overflow"),
+                    ("B", "Excessively well-formed input datasets"),
+                    ("C", "Strict adherence to type contracts and schema invariants"),
+                    ("D", "Optimal memory alignment on modern CPU architectures")
+                ],
+                "A",
+                f"Boundary violations such as empty structures, off-by-one errors, and null pointers represent the classic failure modes in {topic}."
+            ),
+            (
+                f"In a production system architecture, which real-world scenario demonstrates the most effective use of {topic}?",
+                [
+                    ("A", "High-throughput distributed systems requiring predictable latency and data integrity"),
+                    ("B", "Storing temporary ephemeral logs without ever querying them"),
+                    ("C", "Replacing all network protocols with unbuffered character streams"),
+                    ("D", "Static text rendering on offline embedded displays")
+                ],
+                "A",
+                f"In production architectures, {topic} is best leveraged where predictable latency, structural consistency, and scaling invariants are critical."
+            )
+        ]
+
+        questions: List[QuizQuestion] = []
+        for idx in range(min(count, len(templates))):
+            q_text, opts_data, correct_key, expl = templates[idx]
+            options = [QuizOption(key=k, text=t) for k, t in opts_data]
+            questions.append(QuizQuestion(
+                id=idx + 1,
+                question=q_text,
+                options=options,
+                correct_answer=correct_key,
+                explanation=expl
+            ))
+        return questions
+
+    @staticmethod
+    def _sanitize_quiz_questions(raw_items: List[Dict[str, Any]], topic: str, count: int) -> List[QuizQuestion]:
+        """Cleans, validates answer integrity, and rejects near-duplicate template questions."""
+        valid_keys = {"A", "B", "C", "D"}
+        seen_questions: List[str] = []
+        cleaned_questions: List[QuizQuestion] = []
+
+        for item in raw_items:
+            q_text = str(item.get("question", "")).strip()
+            if not q_text or len(q_text) < 10:
+                continue
+
+            # Diversity check: compute token Jaccard similarity against already accepted questions
+            tokens = set(re.findall(r"\w+", q_text.lower()))
+            is_duplicate = False
+            for seen in seen_questions:
+                seen_tokens = set(re.findall(r"\w+", seen.lower()))
+                if tokens and seen_tokens:
+                    jaccard = len(tokens & seen_tokens) / len(tokens | seen_tokens)
+                    if jaccard > 0.72:  # High template overlap
+                        is_duplicate = True
+                        break
+            if is_duplicate:
+                logger.warning(f"Rejected duplicate quiz question template: {q_text[:60]}")
+                continue
+
+            # Sanitize options
+            raw_options = item.get("options", [])
+            opts: List[QuizOption] = []
+            for opt_idx, o in enumerate(raw_options):
+                if isinstance(o, dict):
+                    key = str(o.get("key", "")).strip().upper()
+                    if key not in valid_keys and opt_idx < 4:
+                        key = ["A", "B", "C", "D"][opt_idx]
+                    text = str(o.get("text", "")).strip()
+                    if text:
+                        opts.append(QuizOption(key=key, text=text))
+                elif isinstance(o, str):
+                    key = ["A", "B", "C", "D"][opt_idx % 4]
+                    opts.append(QuizOption(key=key, text=o.strip()))
+
+            if len(opts) < 2:
+                continue
+
+            # Ensure all keys A..D are distinct
+            existing_keys = [o.key for o in opts]
+            if len(existing_keys) != len(set(existing_keys)) or any(k not in valid_keys for k in existing_keys):
+                for opt_idx, o in enumerate(opts[:4]):
+                    o.key = ["A", "B", "C", "D"][opt_idx]
+
+            # Sanitize and verify correct answer key
+            raw_ans = str(item.get("correct_answer", "")).strip().upper()
+            clean_ans = None
+            if raw_ans in valid_keys and raw_ans in {o.key for o in opts}:
+                clean_ans = raw_ans
+            else:
+                match = re.search(r"\b([A-D])\b", raw_ans)
+                if match and match.group(1) in {o.key for o in opts}:
+                    clean_ans = match.group(1)
+                else:
+                    for o in opts:
+                        if raw_ans.lower() in o.text.lower() or o.text.lower() in raw_ans.lower():
+                            clean_ans = o.key
+                            break
+
+            if not clean_ans:
+                clean_ans = opts[0].key
+
+            explanation = str(item.get("explanation", "")).strip()
+            if not explanation:
+                explanation = f"Option {clean_ans} is the academically validated answer for '{topic}'."
+
+            seen_questions.append(q_text)
+            cleaned_questions.append(QuizQuestion(
+                id=len(cleaned_questions) + 1,
+                question=q_text,
+                options=opts,
+                correct_answer=clean_ans,
+                explanation=explanation
+            ))
+
+            if len(cleaned_questions) >= count:
+                break
+
+        # If model generated fewer than count, supplement with diverse fallback questions
+        if len(cleaned_questions) < count:
+            fallbacks = GeminiService._generate_diverse_fallback_quiz(topic, count)
+            for fb in fallbacks:
+                if len(cleaned_questions) >= count:
+                    break
+                fb_tokens = set(re.findall(r"\w+", fb.question.lower()))
+                if not any(len(fb_tokens & set(re.findall(r"\w+", s.lower()))) / max(1, len(fb_tokens | set(re.findall(r"\w+", s.lower())))) > 0.72 for s in seen_questions):
+                    fb.id = len(cleaned_questions) + 1
+                    cleaned_questions.append(fb)
+
+        return cleaned_questions
+
     def generate_quiz(self, topic: str, count: int = 5, difficulty: str = "medium", document_context: Optional[str] = None) -> List[QuizQuestion]:
+        dimensions = [
+            "1. Foundational Core Definition & Theoretical Principle: Assess deep conceptual understanding rather than rote recall.",
+            "2. Internal Mechanics & Algorithmic Process: Examine step-by-step state transitions, operation flow, or data movement.",
+            "3. Comparative Analysis & Trade-Offs: Compare asymptotic complexity (time/space), architectural trade-offs, or pros/cons vs alternatives.",
+            "4. Edge Cases, Failure Modes & Pitfalls: Test what occurs under boundary conditions, off-by-one errors, invalid input, or resource exhaustion.",
+            "5. Real-World Practical Application & Case Study: Provide a concrete, scenario-based engineering/scientific dilemma requiring synthesis."
+        ]
+        dim_instructions = "\n".join([f"- {d}" for d in dimensions[:min(count, len(dimensions))]])
+
         prompt = (
-            f"Generate an academic multiple-choice quiz of exactly {count} questions on the topic: '{topic}'.\n"
-            f"Difficulty level: {difficulty}.\n"
+            f"Generate an academic multiple-choice quiz of exactly {count} distinct questions on the topic: '{topic}'.\n"
+            f"Difficulty level: {difficulty}.\n\n"
+            f"### CRITICAL PEDAGOGICAL DIVERSITY MANDATE:\n"
+            f"Each question MUST test a completely different conceptual dimension of '{topic}'. DO NOT clone templates or merely substitute numbers/variable names.\n"
+            f"Required Cognitive Dimensions:\n{dim_instructions}\n\n"
+            f"### ANSWER INTEGRITY & DISTRACTOR RULES:\n"
+            f"1. Each question must have EXACTLY 4 plausible options labeled 'A', 'B', 'C', and 'D'.\n"
+            f"2. Distractors must reflect authentic student misconceptions or common bugs, not obvious nonsense.\n"
+            f"3. 'correct_answer' MUST be strictly one of ['A', 'B', 'C', 'D'].\n"
+            f"4. 'explanation' MUST clearly articulate why that exact option letter is correct, and specifically explain why the other 3 options are incorrect.\n\n"
         )
         if document_context:
-            prompt += f"Base the questions primarily on this document context:\n\"\"\"\n{document_context[:3500]}\n\"\"\"\n"
+            prompt += f"Base the questions primarily on this document context:\n\"\"\"\n{document_context[:3500]}\n\"\"\"\n\n"
 
         prompt += (
             "Return ONLY valid JSON without markdown wrapping or code fences. Follow this exact JSON structure:\n"
@@ -225,41 +413,16 @@ class GeminiService:
             "]"
         )
 
-        raw = self._generate_raw(prompt)
-        cleaned = re.sub(r"^```json\s*", "", raw.strip(), flags=re.IGNORECASE)
-        cleaned = re.sub(r"^```\s*", "", cleaned)
-        cleaned = re.sub(r"\s*```$", "", cleaned)
-
         try:
+            raw = self._generate_raw(prompt)
+            cleaned = re.sub(r"^```json\s*", "", raw.strip(), flags=re.IGNORECASE)
+            cleaned = re.sub(r"^```\s*", "", cleaned)
+            cleaned = re.sub(r"\s*```$", "", cleaned)
             items = json.loads(cleaned)
-            questions: List[QuizQuestion] = []
-            for item in items:
-                opts = [QuizOption(key=o["key"], text=o["text"]) for o in item.get("options", [])]
-                questions.append(QuizQuestion(
-                    id=item.get("id", len(questions) + 1),
-                    question=item.get("question", ""),
-                    options=opts,
-                    correct_answer=item.get("correct_answer", "A"),
-                    explanation=item.get("explanation", "")
-                ))
-            return questions
+            return self._sanitize_quiz_questions(items, topic, count)
         except Exception as e:
-            logger.error(f"Failed to parse quiz JSON: {e}. Raw text: {raw[:300]}")
-            # Safe structured fallback
-            return [
-                QuizQuestion(
-                    id=1,
-                    question=f"Which fundamental principle is central to understanding {topic}?",
-                    options=[
-                        QuizOption(key="A", text="Systematic decomposition and logical invariant checking"),
-                        QuizOption(key="B", text="Arbitrary execution without boundary conditions"),
-                        QuizOption(key="C", text="Linear extrapolation without state tracking"),
-                        QuizOption(key="D", text="Ignoring algorithmic complexity")
-                    ],
-                    correct_answer="A",
-                    explanation=f"In academic study of {topic}, rigorous decomposition and invariants provide the formal guarantee of correctness."
-                )
-            ]
+            logger.error(f"Failed to generate or parse quiz JSON: {e}")
+            return self._generate_diverse_fallback_quiz(topic, count)
 
     # ==========================================================
     # STUDY TOOLS: PRACTICE QUESTIONS

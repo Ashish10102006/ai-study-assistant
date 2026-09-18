@@ -177,6 +177,56 @@ class StudyQuizResponse(BaseModel):
     questions: List[QuizQuestion]
 
 
+class QuizVerifyItem(BaseModel):
+    question_id: int
+    selected_key: str
+    correct_answer: str
+
+
+class QuizVerifyRequest(BaseModel):
+    topic: str
+    answers: List[QuizVerifyItem]
+
+
+class QuizVerifyResultItem(BaseModel):
+    question_id: int
+    selected_key: str
+    correct_answer: str
+    is_correct: bool
+
+
+class QuizVerifyResponse(BaseModel):
+    topic: str
+    score: int
+    total: int
+    percentage: float
+    results: List[QuizVerifyResultItem]
+
+
+class SaveNoteRequest(BaseModel):
+    topic: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1)
+    subject: Optional[str] = "Computer Science"
+    document_id: Optional[str] = None
+
+
+class UpdateNoteRequest(BaseModel):
+    topic: Optional[str] = None
+    content: Optional[str] = None
+    subject: Optional[str] = None
+
+
+class SavedNoteResponse(BaseModel):
+    id: str
+    user_id: Optional[str] = None
+    topic: str
+    subject: Optional[str] = None
+    content: str
+    document_id: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+
 class PracticeQuestionItem(BaseModel):
     id: int
     type: str  # Conceptual, Problem-Solving, Exam-Style, Short-Answer

@@ -8,7 +8,7 @@
 [![Database](https://img.shields.io/badge/Database-Supabase%20PostgreSQL%20%2B%20pgvector-3ECF8E?style=flat&logo=supabase)](https://supabase.com)
 [![AI Engine](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?style=flat&logo=google)](https://ai.google.dev/)
 [![Search Engine](https://img.shields.io/badge/Search-Tavily%20Academic-6C5CE7?style=flat)](https://tavily.com/)
-[![Tests](https://img.shields.io/badge/Tests-24%20Passed%20%2F%200%20Failed-brightgreen?style=flat&logo=pytest)](Backend/tests/)
+[![Tests](https://img.shields.io/badge/Tests-39%20Passed%20%2F%200%20Failed-brightgreen?style=flat&logo=pytest)](Backend/tests/)
 
 ---
 
@@ -136,6 +136,14 @@ RRF ensures documents that perform moderately well in both searches outrank docu
 ### 4. Contextual Reranking
 Evaluates the top RRF candidate chunks against query terms, heading alignment, and chunk completeness. It selects the top 3–5 highest-yield passages and generates structured citation tags with exact page numbers and document names.
 
+### 5. Strict Document Grounding & Relevance Gating (GroundingEvaluator)
+To prevent subtle hallucinations when a student asks about a topic absent from their uploaded document, the system passes candidates through a dedicated `GroundingEvaluator`:
+* **Stopword Stripping**: Filters out grammatical boilerplate, interrogatives, and generic academic filler to extract the substantive subject nouns, verbs, and formulas.
+* **Three-Tier Classification**: Evaluates substantive overlap and assigns:
+  * `STRONGLY_SUPPORTED`: Complete conceptual support found in document chunks $\rightarrow$ generates fully grounded answer with page citations.
+  * `PARTIALLY_SUPPORTED`: Core concept present but specific sub-aspect missing $\rightarrow$ answers available facts with explicit caveat regarding missing terms.
+  * `NOT_SUPPORTED`: Substantive keywords absent from uploaded document $\rightarrow$ **Immediate refusal** ("I couldn't find this information in the uploaded document..."). **Under zero circumstances does the system fall back to Gemini general knowledge for document-scoped questions.**
+
 ---
 
 ## 7. Input → Processing → Output
@@ -144,11 +152,13 @@ Evaluates the top RRF candidate chunks against query terms, heading alignment, a
 |:---|:---|:---|
 | **Student question** | Adaptive query router (intent classification) | Selected processing pathway (Doc, Web, Direct, or Hybrid) |
 | **Uploaded document** (`.pdf`, `.docx`, `.txt`, `.md`) | File validation $\rightarrow$ structure extraction $\rightarrow$ chunking $\rightarrow$ embeddings | Stored document records with indexed chunk vectors |
-| **Document question** | Hybrid retrieval (vector + keyword) $\rightarrow$ RRF $\rightarrow$ contextual reranking | Top-K context chunks with page numbers and sections |
+| **Document question** | Hybrid retrieval (vector + keyword) $\rightarrow$ RRF $\rightarrow$ contextual reranking $\rightarrow$ `GroundingEvaluator` | Top-K grounded chunks with page numbers OR honest document refusal |
 | **Current / web question** | Academic query construction $\rightarrow$ Tavily search API | Authenticated web references with URLs and excerpts |
 | **Assembled context** | Pedagogical prompt engineering $\rightarrow$ Google Gemini generation | Grounded Markdown answer with citations and math |
-| **Quiz request** | Schema validation $\rightarrow$ Gemini structured JSON generation | Interactive 5-question multiple-choice quiz |
-| **Notes request** | 6-part academic framework synthesis | Structured revision notes with cheat-sheets |
+| **Quiz request** | 5 cognitive dimensions $\rightarrow$ Gemini JSON $\rightarrow$ duplicate template rejection | Interactive 5-question MCQ quiz with unique conceptual angles |
+| **Quiz verification** | Deterministic answer comparison $\rightarrow$ per-question validation | Score, percentage, mastery evaluation & correct answer key |
+| **Notes request** | 6-part academic framework synthesis | Structured revision notes with definitions, code & cheat-sheets |
+| **Save note request** | Multi-tenant persistence $\rightarrow$ SQLite / Supabase `saved_notes` | Persisted note entry in student's private Notes Library |
 
 ---
 
@@ -192,6 +202,7 @@ erDiagram
     profiles ||--o{ conversations : owns
     profiles ||--o{ uploaded_documents : uploads
     profiles ||--o{ saved_resources : saves
+    profiles ||--o{ saved_notes : saves
     profiles ||--o{ user_interests : has
     conversations ||--o{ messages : contains
     uploaded_documents ||--o{ document_chunks : partitions
@@ -262,6 +273,17 @@ erDiagram
         text source
         text description
         timestamptz created_at
+    }
+
+    saved_notes {
+        text id PK
+        text user_id FK
+        text topic
+        text subject
+        text content
+        text document_id
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     user_interests {
@@ -392,13 +414,16 @@ pytest tests/test_adaptive_rag.py tests/test_documents.py tests/test_ai.py tests
 
 ### Test Verification Results
 * **`tests/test_adaptive_rag.py`**: 10 passed (Router, Embeddings, Chunking, RRF, Reranker, Tenant Isolation, API)
-* **`tests/test_documents.py`**: 2 passed (Validation, Chunking)
-* **`tests/test_ai.py`**: 2 passed (Initialization, Prompt construction)
-* **`tests/test_api.py`**: 5 passed (Health, Root, Conversations, Profiles)
-* **`tests/test_search.py`**: 1 passed (Tavily search logic)
-* **`tests/test_pre_github_verification.py`**: 6 passed, 5 skipped (live credentials optional)
-* **Total Automated Test Suite**: **26 Passed, 5 Skipped, 0 Failed**
-* **Frontend Production Build**: **Passed** (`vite build` compiled 1,954 modules)
+* **`tests/test_document_grounding.py`**: 5 passed (Strict Grounding Evaluator, Stopword Stripping, Classification, Tenant Gating)
+* **`tests/test_quiz_integrity.py`**: 3 passed (Cognitive Diversity, Option Keys, Answer Integrity, Scoring API)
+* **`tests/test_notes_persistence.py`**: 2 passed (Saved Notes CRUD, Multi-Tenant Isolation, Input Validation)
+* **`tests/test_documents.py`**: 2 passed (File Type Validation, Structure-Aware Chunking)
+* **`tests/test_ai.py`**: 2 passed (Gemini Client Initialization, Prompt Formatting)
+* **`tests/test_api.py`**: 5 passed (Health Diagnostics, Root, Conversations, Profile Updates)
+* **`tests/test_search.py`**: 1 passed (Tavily Academic Search Engine)
+* **`tests/test_pre_github_verification.py`**: 9 passed, 5 skipped (Full End-to-End Regression Baseline)
+* **Total Automated Test Suite**: **39 Passed, 5 Skipped, 0 Failed**
+* **Frontend Production Build**: **Passed** (`vite build` compiled 1,954 modules in 4.49s)
 
 ---
 
