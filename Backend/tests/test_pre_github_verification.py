@@ -358,3 +358,50 @@ def test_vercel_backend_configuration():
     assert python_version_path.exists(), "Backend/.python-version must exist"
     assert python_version_path.read_text(encoding="utf-8").strip() == "3.13"
 
+
+def test_vercel_path_rewrite_middleware():
+    """Verify that VercelPathRewriteMiddleware restores original paths from x-matched-path."""
+    # 1. Test /api/health via /main.py with x-matched-path
+    res = client.get("/main.py", headers={"x-matched-path": "/api/health"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "healthy"
+
+    # 2. Test /api/documents via /main.py with x-matched-path
+    res_docs = client.get("/main.py", headers={"x-matched-path": "/api/documents"})
+    assert res_docs.status_code == 200
+    assert isinstance(res_docs.json(), list)
+
+    # 3. Test direct /main.py fallback to root endpoint
+    res_root = client.get("/main.py")
+    assert res_root.status_code == 200
+    assert res_root.json()["platform"] == "AI STUDY ASSISTANT"
+
+
+def test_gemini_model_configuration():
+    """Verify Gemini models are configured with authentic, high-yield Google models."""
+    settings = get_settings()
+    # Primary model must be valid
+    assert "gemini" in settings.GEMINI_MODEL.lower()
+    assert "3.5-flash-lite" not in settings.GEMINI_MODEL, "Must not use fictitious model name"
+    # Fallback models must be valid production models
+    for fb in settings.GEMINI_FALLBACK_MODELS:
+        assert "3.5-flash-lite" not in fb
+        assert "3.6-flash" not in fb
+        assert "3.8-flash" not in fb
+    assert any("2.0" in m or "1.5" in m for m in settings.GEMINI_FALLBACK_MODELS)
+
+
+def test_vercel_api_index_entrypoint():
+    """Verify Backend/api/index.py exists and exports FastAPI app for Vercel serverless."""
+    base_dir = Path(__file__).resolve().parent.parent.parent
+    entry_path = base_dir / "Backend" / "api" / "index.py"
+    assert entry_path.exists(), "Backend/api/index.py must exist"
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("vercel_index", str(entry_path))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert hasattr(mod, "app")
+    assert mod.app.title == "AI STUDY ASSISTANT"
+
+

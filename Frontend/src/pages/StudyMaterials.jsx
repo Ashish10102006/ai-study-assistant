@@ -29,9 +29,9 @@ export default function StudyMaterials() {
   const loadDocuments = async () => {
     try {
       const data = await api.get('/api/documents');
-      setDocuments(data);
+      setDocuments(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load study documents:', err);
     }
   };
 
@@ -47,7 +47,12 @@ export default function StudyMaterials() {
       await api.upload('/api/documents/upload', formData);
       await loadDocuments();
     } catch (err) {
-      setError(err.message || 'File upload failed. Please ensure file is PDF, TXT, or MD under 25MB.');
+      const msg = err.message || '';
+      if (msg.toLowerCase().includes('not found') || msg.toLowerCase().includes('failed to connect')) {
+        setError('Document intelligence service is temporarily synchronizing with backend. Please retry in a moment.');
+      } else {
+        setError(msg || 'File upload failed. Please ensure file is PDF, TXT, or MD under 25MB.');
+      }
     } finally {
       setUploading(false);
     }

@@ -34,6 +34,8 @@ class GeminiService:
     def _generate_raw(self, prompt: str, system_instruction: Optional[str] = None) -> str:
         """Helper to invoke Gemini with primary model and automatic fallback."""
         if not self._client:
+            self._init_client()
+        if not self._client:
             raise RuntimeError("AI service is temporarily unavailable. Please try again.")
 
         models_to_try = [self.settings.GEMINI_MODEL] + self.settings.GEMINI_FALLBACK_MODELS

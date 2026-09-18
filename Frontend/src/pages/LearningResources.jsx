@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import SourceBadge from '../components/SourceBadge';
 import Loading3D from '../components/3d/Loading3D';
-import { Search, Globe, Filter, Bookmark, ExternalLink } from 'lucide-react';
+import { Search, Globe, Filter, Bookmark, ExternalLink, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function LearningResources() {
   const [query, setQuery] = useState('');
@@ -10,6 +10,7 @@ export default function LearningResources() {
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     // Initial load of curated resources
@@ -18,11 +19,16 @@ export default function LearningResources() {
 
   const loadCurated = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await api.get('/api/resources', { subject, topic: 'Fundamental Concepts' });
-      setResources(data);
+      setResources(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
+      console.error('Curated resources fetch error:', err);
+      const msg = err.message || '';
+      if (msg.toLowerCase().includes('connect') || msg.toLowerCase().includes('failed') || msg.toLowerCase().includes('not found')) {
+        setError('Academic discovery service is currently synchronizing with the backend. Please try searching below or retry.');
+      }
     } finally {
       setLoading(false);
     }
@@ -34,15 +40,17 @@ export default function LearningResources() {
 
     setLoading(true);
     setSearched(true);
+    setError(null);
     try {
       const data = await api.post('/api/search', {
         query: query.trim(),
         subject,
         max_results: 8
       });
-      setResources(data);
+      setResources(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
+      console.error('Academic search error:', err);
+      setError('Unable to retrieve academic web resources at this moment. Please retry your search shortly.');
     } finally {
       setLoading(false);
     }
@@ -61,6 +69,38 @@ export default function LearningResources() {
           Search official documentation, university lecture portals, research papers, and verified study tutorials.
         </p>
       </div>
+
+      {/* Error / Offline Alert */}
+      {error && (
+        <div
+          style={{
+            background: 'rgba(245, 158, 11, 0.12)',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            borderRadius: '14px',
+            padding: '1rem 1.25rem',
+            marginBottom: '1.75rem',
+            color: '#fbbf24',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+            flexWrap: 'wrap'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <AlertCircle size={20} style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: '0.9rem' }}>{error}</span>
+          </div>
+          <button
+            onClick={() => loadCurated()}
+            className="btn btn-secondary"
+            style={{ padding: '0.35rem 0.75rem', fontSize: '0.82rem', height: 'auto', minHeight: '32px' }}
+          >
+            <RefreshCw size={14} />
+            <span>Retry</span>
+          </button>
+        </div>
+      )}
 
       {/* Search & Filter Bar */}
       <div className="glass-card" style={{ padding: 'clamp(1rem, 2.5vw, 1.75rem)', marginBottom: '2rem', borderRadius: '18px' }}>

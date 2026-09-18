@@ -51,6 +51,8 @@ class TavilyService:
         Never fabricates links or citations.
         """
         if not self._client:
+            self._init_client()
+        if not self._client:
             logger.warning("Tavily client unavailable. Cannot perform web search.")
             return []
 
