@@ -86,7 +86,7 @@ export default function Footer() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Sparkles size={16} color="var(--brand-cyan)" />
-                <span>Powered by Google Gemini 3.6 Flash</span>
+                <span>Powered by Google Gemini 2.5 Flash</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Globe size={16} color="#4facfe" />

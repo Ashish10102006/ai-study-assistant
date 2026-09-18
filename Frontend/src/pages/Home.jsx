@@ -166,7 +166,7 @@ export default function Home() {
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: '800', fontSize: '1.3rem', color: '#fff' }}>Gemini 3.6</div>
+                  <div style={{ fontWeight: '800', fontSize: '1.3rem', color: '#fff' }}>Gemini 2.5</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Deep Pedagogy</div>
                 </div>
                 <div style={{ width: '1px', height: '24px', background: 'rgba(255, 255, 255, 0.1)' }} />
@@ -525,7 +525,7 @@ export default function Home() {
           <div className="glass-card" style={{ padding: 'clamp(1.25rem, 3vw, 2rem)' }}>
             <Zap size={32} color="#00f2fe" style={{ marginBottom: '1rem' }} />
             <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: '#fff' }}>
-              Powered by Gemini 3.6 Flash
+              Powered by Gemini 2.5 Flash
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
               Sub-second response latency with modern pedagogical models. Capable of reasoning over intricate mathematical logic and advanced software architectures.

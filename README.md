@@ -78,7 +78,7 @@ flowchart TD
         DocContext --> PromptAssembly[Context Assembly & Prompt Boundary Separation]
         WebContext --> PromptAssembly
         PathDirect --> PromptAssembly
-        PromptAssembly --> GeminiEngine[Google Gemini 2.5/3.6 Flash]
+        PromptAssembly --> GeminiEngine[Google Gemini 2.5 Flash]
         GeminiEngine --> GroundedAnswer[Grounded Final Answer]
         GroundedAnswer --> Citations[Clickable Page & Web Citations]
     end
@@ -159,7 +159,7 @@ Evaluates the top RRF candidate chunks against query terms, heading alignment, a
 | **Frontend** | React 18 + Vite | Single Page Application with glassmorphism and mobile drawer |
 | **3D Scene** | Three.js | Interactive 3D Digital Brain visualization |
 | **Backend API** | FastAPI 0.115+ (Python 3.13) | RESTful API with Pydantic v2 schemas and correlation tracing |
-| **AI Generation** | Google Gemini (3.5-flash-lite / 3.6-flash) | Pedagogical explanation across 6 academic study modes |
+| **AI Generation** | Google Gemini (`gemini-2.5-flash` / fallbacks) | Pedagogical explanation across 6 academic study modes |
 | **Embeddings** | Google `text-embedding-004` (768-dim) | Semantic vector embeddings for document chunks |
 | **RAG Architecture** | Adaptive RAG | Intent-based routing with minimum resource invocation |
 | **Vector Search** | `pgvector` / Python Cosine Engine | Semantic similarity retrieval |
@@ -307,7 +307,7 @@ Topic Selection → Mode Selection → Pydantic Schema Validation → Gemini Str
 
 * **Frontend**: React 18, Vite 6, React Router 6, Lucide Icons, KaTeX, React Markdown, Three.js
 * **Backend**: FastAPI 0.115, Uvicorn, Pydantic v2, Pydantic Settings, `httpx`, `pypdf`
-* **AI & Cognition**: Google GenAI SDK (`gemini-3.5-flash-lite`, `gemini-3.6-flash`), Google Embeddings (`text-embedding-004`)
+* **AI & Cognition**: Google GenAI SDK (`gemini-2.5-flash`, fallback models), Google Embeddings (`text-embedding-004`)
 * **Search Grounding**: Tavily Search Engine Python SDK
 * **Database & Storage**: Supabase PostgreSQL 15, `pgvector`, SQLite 3 (shadow fallback)
 * **Authentication**: Supabase JWT / Guest Scholar Token Guard

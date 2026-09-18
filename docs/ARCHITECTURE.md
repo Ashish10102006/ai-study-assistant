@@ -82,7 +82,7 @@ flowchart TD
     end
 
     subgraph ServiceLayer ["Core Service Orchestration Layer"]
-        GeminiSvc["Gemini Service (gemini-3.6-flash + Fallbacks)"]
+        GeminiSvc["Gemini Service (gemini-2.5-flash + Fallbacks)"]
         TavilySvc["Tavily Search Service (Live Web Extraction)"]
         DocProc["Document Processor (pypdf + Overlapping Chunker)"]
         StorageSvc["Storage Service (Dual-Driver Abstraction)"]
@@ -147,7 +147,7 @@ sequenceDiagram
     participant API as FastAPI Backend
     participant Doc as DocProcessor (pypdf)
     participant Tavily as Tavily Search API
-    participant Gemini as Google Gemini 3.6 Flash
+    participant Gemini as Google Gemini 2.5 Flash
     participant DB as Supabase / SQLite
 
     Student->>UI: Submit Question ("Explain B-Trees in Simple Mode")
@@ -186,8 +186,8 @@ sequenceDiagram
   - Uses the official Tavily SDK to perform semantic search queries when the Adaptive Router detects temporal, live, or external query requirements.
   - Returned sources contain verified domains, live URLs, and real snippet summaries. Zero fabricated citations.
 - **Cognitive Model Fallback**:
-  - Primary model: `gemini-3.5-flash-lite` / `gemini-3.6-flash`.
-  - Fallback sequence: Automatically cascades to `gemini-flash-lite-latest`, `gemini-3-flash-preview`, `gemini-3.8-flash` if rate-limited or unavailable.
+  - Primary model: `gemini-2.5-flash`.
+  - Fallback sequence: Automatically cascades to `gemini-flash-latest`, `gemini-flash-lite-latest`, `gemini-2.5-flash-lite`, `gemini-2.5-pro`, `gemini-3.5-flash` if rate-limited or unavailable.
 
 ---
 
