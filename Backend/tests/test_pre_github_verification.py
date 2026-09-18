@@ -394,7 +394,7 @@ def test_gemini_model_configuration():
         assert "3.5-flash-lite" not in fb
         assert "3.6-flash" not in fb
         assert "3.8-flash" not in fb
-    assert any("2.0" in m or "1.5" in m for m in settings.GEMINI_FALLBACK_MODELS)
+    assert any("flash" in m or "2.5" in m for m in settings.GEMINI_FALLBACK_MODELS)
 
 
 def test_vercel_api_index_entrypoint():

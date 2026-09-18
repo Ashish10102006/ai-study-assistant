@@ -33,12 +33,14 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = Path(tempfile.gettempdir()) / "uploads" if (os.getenv("VERCEL") or not os.access(str(backend_dir), os.W_OK)) else backend_dir / "uploads"
     MAX_FILE_SIZE_MB: int = 25
 
-    # AI Model Settings - configured with verified, high-performance Google Gemini models
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    # AI Model Settings - configured with verified active Google Gemini models
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     GEMINI_FALLBACK_MODELS: list[str] = [
-        "gemini-1.5-flash",
-        "gemini-2.0-flash-lite",
-        "gemini-1.5-pro"
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-pro",
+        "gemini-3.5-flash"
     ]
 
     model_config = SettingsConfigDict(case_sensitive=True, extra="ignore")

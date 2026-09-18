@@ -66,18 +66,7 @@ async def health_check():
     )
 
 
-@router.get("/diag-models")
-async def diag_models():
-    gemini = get_gemini_service()
-    if not gemini._client:
-        gemini._init_client()
-    if not gemini._client:
-        return {"error": "no client"}
-    try:
-        models = [m.name for m in gemini._client.models.list()]
-        return {"models": models}
-    except Exception as e:
-        return {"error": str(e)}
+
 
 
 # ==========================================================
